@@ -1,0 +1,45 @@
+name: ci
+
+# `make check`, split across jobs so the legs run in parallel. Every check is
+# a `make` target invoked exactly as it is locally: there is no check that CI
+# enforces and `make check` does not, and none the other way round.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [lint, test, coverage, cl-check]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # cl-check compares the branch with origin/main
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags since v8
+      - run: make ${{ matrix.target }}
+
+  # The built wheel, once per supported interpreter (PYTHONS in the Makefile).
+  wheel:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.14", "3.15"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags since v8
+      - run: make wheel-test PYTHONS=${{ matrix.python }}

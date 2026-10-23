@@ -1,0 +1,144 @@
+[project]
+name = "ingot-grpcio"
+version = "0.9.0.dev0"
+description = "Integration of grpcio, the gRPC library of Google, into Ingots."
+readme = "README.md"
+requires-python = ">=3.14"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{name = "Aliaksandr Karotki", email = "abkarotki@gmail.com"}]
+keywords = ["ingots", "grpc", "grpcio"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Typing :: Typed",
+]
+# Before 1.0 a minor version of ingots may break its addons.
+dependencies = ["ingots>=0.30.1,<0.31"]
+
+[project.urls]
+repository = "https://github.com/ak-ingots/ingot-grpcio"
+changelog = "https://github.com/ak-ingots/ingot-grpcio/blob/main/CHANGELOG.md"
+
+[build-system]
+requires = ["uv_build>=0.13.5,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "ingot_grpcio"
+module-root = ""
+
+[tool.uv]
+# uv 0.13.5 drops the eMudhra roots from its certificates and its Pythons.
+required-version = ">=0.13.5"
+environments = ["sys_platform == 'linux'", "sys_platform == 'darwin'"]
+
+[dependency-groups]
+dev = [
+    "black",
+    "coverage",
+    "flake8",
+    "flake8-class-attributes-order",
+    "flake8-pyproject",
+    "mypy",
+]
+changelog = ["towncrier"]
+
+[tool.black]
+line-length = 88
+
+[tool.flake8]
+exclude = [".git", ".venv"]
+max-line-length = 88
+extend-ignore = ["E203", "E701", "E704"]
+# Member order of ADR 0007 (ingots-libs). `__init_subclass__` is written with an
+# explicit @classmethod, so it is checked as a class method.
+class_attributes_order = [
+    "nested_class",
+    "constant",
+    "field",
+    "static_method",
+    "protected_static_method",
+    "class_method",
+    "protected_class_method",
+    "__init__",
+    "property_method",
+    "protected_property_method",
+    "magic_method",
+    "method",
+    "protected_method",
+]
+
+[tool.mypy]
+strict = true
+python_version = "3.14"
+enable_error_code = ["deprecated", "explicit-override"]
+
+[tool.towncrier]
+name = "ingot-grpcio"
+directory = "changelog.d"
+filename = "CHANGELOG.md"
+start_string = "<!-- towncrier release notes start -->\n"
+title_format = "## [{version}] - {project_date}"
+issue_format = "[#{issue}](https://github.com/ak-ingots/ingot-grpcio/issues/{issue})"
+underlines = ["", "", ""]
+wrap = false
+template = "changelog.d/_template.md"
+ignore = ["README.md", "_template.md"]
+
+[[tool.towncrier.type]]
+directory = "added"
+name = "Added"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "changed"
+name = "Changed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecated"
+name = "Deprecated"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "fixed"
+name = "Fixed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "removed"
+name = "Removed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "security"
+name = "Security"
+showcontent = true
+
+# Internal changes users need not know about (agent rules, CI, test
+# refactoring): the fragment satisfies `cl-check`, its text is not published.
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Misc"
+showcontent = false
+
+[tool.coverage.run]
+branch = true
+source = ["ingot_grpcio"]
+
+[tool.coverage.report]
+fail_under = 99
+show_missing = true
+skip_covered = true
+exclude_also = [
+    "if t.TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
