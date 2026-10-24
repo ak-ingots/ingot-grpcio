@@ -1,6 +1,6 @@
 [project]
 name = "ingot-grpcio"
-version = "0.9.0"
+version = "0.10.0.dev0"
 description = "Integration of grpcio, the gRPC library of Google, into Ingots."
 readme = "README.md"
 requires-python = ">=3.14"
@@ -20,7 +20,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 # Before 1.0 a minor version of ingots may break its addons.
-dependencies = ["ingots>=0.30.1,<0.31"]
+dependencies = ["ingots>=0.31.0,<0.32"]
 
 [project.urls]
 repository = "https://github.com/ak-ingots/ingot-grpcio"

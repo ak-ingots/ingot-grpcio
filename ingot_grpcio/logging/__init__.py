@@ -1,22 +1,22 @@
-"""The logging of the defaults with the logger of the addon."""
+"""The logging unit of the defaults with the logger of the addon."""
 
-__all__ = ("Logging",)
+__all__ = ("GrpcLogging",)
 
 import typing as t
 
-from ingots.defaults.logging import Logging as BaseLogging
+from ingots.defaults.logging import Logging
 
 if t.TYPE_CHECKING:
-    from .project import Project
+    from ..project import GrpcProject
 
 
-class Logging(BaseLogging):
+class GrpcLogging(Logging):
     """
     The logging unit, with the logger of the addon, ``ingot_grpcio``, at
     ``GRPC_LOGGING_LEVEL``.
     """
 
-    project: "Project"
+    project: "GrpcProject"
 
     @t.override
     def build_loggers(self) -> dict[str, dict[str, t.Any]]:

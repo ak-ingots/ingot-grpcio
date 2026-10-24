@@ -1,0 +1,1 @@
+The addon is laid out as `ingots.defaults`, and its classes take the prefix `Grpc`: `GrpcProject` from `ingot_grpcio`, `GrpcSettings` from `ingot_grpcio.settings`, `GrpcConfigs` from `ingot_grpcio.settings.configs` and `GrpcLogging` from `ingot_grpcio.logging`, instead of `Project`, `Settings`, `Configs` and `Logging` from `ingot_grpcio`.
