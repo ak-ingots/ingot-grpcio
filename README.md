@@ -13,13 +13,14 @@ gRPC servers and clients on its API. An addon of
 import ingot_grpcio
 
 
-class AppProject(ingot_grpcio.Project):
+class AppProject(ingot_grpcio.GrpcProject):
     env_configs_prefix = "APP"
 ```
 
 An application with other addons joins the configs, the settings and the
-logging instead: `class AppConfigs(HttpConfigs, ingot_grpcio.Configs)`, and so
-on, as the addon guide of Ingots shows. The configs of the addon are named
+logging instead: `class AppConfigs(HttpConfigs, GrpcConfigs)` with `GrpcConfigs`
+from `ingot_grpcio.settings.configs`, and so on, as the addon guide of Ingots
+shows. The configs of the addon are named
 `GRPC_*`: `GRPC_LOGGING_LEVEL` sets the level of its logger, `ingot_grpcio`.
 
 **Status:** pre-alpha. The skeleton of the addon: its project, configs,

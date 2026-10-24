@@ -7,7 +7,10 @@ from unittest import mock
 
 import ingot_grpcio
 from ingot_grpcio.__main__ import main
-from ingots.defaults import Project as DefaultsProject
+from ingot_grpcio.logging import GrpcLogging
+from ingot_grpcio.settings import GrpcSettings
+from ingot_grpcio.settings.configs import GrpcConfigs
+from ingots.defaults import Project
 from ingots.puer.cli import CommandRunner
 
 
@@ -22,15 +25,15 @@ class ProjectTestCase(unittest.TestCase):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             code = CommandRunner(
-                ingot_grpcio.Project, ["--config", "IS_PRINT_CONFIGS=off", *argv]
+                ingot_grpcio.GrpcProject, ["--config", "IS_PRINT_CONFIGS=off", *argv]
             ).run()
         return code, out.getvalue()
 
     def test_the_project_extends_the_defaults(self) -> None:
-        self.assertTrue(issubclass(ingot_grpcio.Project, DefaultsProject))
-        self.assertIs(ingot_grpcio.Project.settings.cls, ingot_grpcio.Settings)
-        self.assertIs(ingot_grpcio.Project.logging.cls, ingot_grpcio.Logging)
-        self.assertIs(ingot_grpcio.Settings.configs.cls, ingot_grpcio.Configs)
+        self.assertTrue(issubclass(ingot_grpcio.GrpcProject, Project))
+        self.assertIs(ingot_grpcio.GrpcProject.settings.cls, GrpcSettings)
+        self.assertIs(ingot_grpcio.GrpcProject.logging.cls, GrpcLogging)
+        self.assertIs(GrpcSettings.configs.cls, GrpcConfigs)
 
     def test_the_configs_of_the_addon_are_read(self) -> None:
         os.environ["INGOT_GRPC_LOGGING_LEVEL"] = "debug"

@@ -26,4 +26,4 @@ class CanaryTestCase(unittest.TestCase):
         self.assertIn("site-packages", ingot_grpcio.__file__ or "")
 
     def test_the_framework_is_installed(self) -> None:
-        self.assertTrue(importlib.metadata.version("ingots").startswith("0.30."))
+        self.assertTrue(importlib.metadata.version("ingots").startswith("0.31."))

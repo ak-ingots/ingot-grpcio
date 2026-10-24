@@ -197,7 +197,7 @@ wheels = [
 
 [[package]]
 name = "ingot-grpcio"
-version = "0.9.0"
+version = "0.10.0.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "ingots" },
@@ -217,7 +217,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "ingots", specifier = ">=0.30.1,<0.31" }]
+requires-dist = [{ name = "ingots", specifier = ">=0.31.0,<0.32" }]
 
 [package.metadata.requires-dev]
 changelog = [{ name = "towncrier" }]
@@ -232,11 +232,11 @@ dev = [
 
 [[package]]
 name = "ingots"
-version = "0.30.1"
+version = "0.31.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f7/a9/e88b98bd6dd73eca679cfa4b278428b8b2407d45f89402b447b34d6d7044/ingots-0.30.1.tar.gz", hash = "sha256:309ad7026783d749a0a8b2f1df1feac61ca0f48865debef36a469fda8f295190", size = 32524, upload-time = "2026-10-22T21:31:29.687Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/a6/df6c1ba1a6380508c9842579c4a617bc5fd46cf5ac4917a37ed006274259/ingots-0.31.0.tar.gz", hash = "sha256:b61fa08be39b56694e0e912f9be2c43725e68a9e66ed149c1681e096251fb747", size = 33047, upload-time = "2026-10-24T20:56:10.606Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/a7/64728a85621eabd3300fa33b897ca7f373c1633be6b1e904181f16114ced/ingots-0.30.1-py3-none-any.whl", hash = "sha256:a78693b0794e74952e450014c7f1e2006409632d5c553ad975d02e54e5daa03f", size = 47502, upload-time = "2026-10-22T21:31:28.417Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/55/33afd7aabbb02d0aa6e94ef42a76cc6f0e614a6e2336f77646029790a585/ingots-0.31.0-py3-none-any.whl", hash = "sha256:6aec673772b10da63de372a32437f79aabb9e6a39894f22e7baaefd48c4c8c87", size = 48025, upload-time = "2026-10-24T20:56:09.253Z" },
 ]
 
 [[package]]
