@@ -208,6 +208,27 @@ outermost first; the default client yields `ClientGrpcErrorsInterceptor`.
 grpcio takes an interceptor of several kinds of RPCs for the first of
 them only, so a client splits one into a part for each.
 
+## Export
+
+Client SDKs, in any language, are generated from the services a server
+serves: `grpc export` writes them to a `FileDescriptorSet`, complete with
+the files they import, as `protoc --include_imports` writes one. A file
+keeps only the services the servers serve, and every message it declares.
+`--server default` chooses a server of `grpc.servers`, repeated for more;
+every server by default:
+
+```sh
+uv run python -m app grpc export --server default --output demo.binpb
+```
+
+`protoc`, or buf, generates an SDK from the export, without the `.proto`
+files:
+
+```sh
+mkdir sdk
+uv run python -m grpc_tools.protoc --descriptor_set_in=demo.binpb --python_out=sdk --grpc_python_out=sdk app/proto/demo.proto
+```
+
 ## Errors
 
 The RPCs raise the exceptions of the business logic and see no protobuf. A
@@ -269,8 +290,8 @@ client, which logs it at `DEBUG`. A subclass in
 `server_handler = Slot(...)` or `client_handler = Slot(...)` changes how,
 its logging for one (`_log()`).
 
-**Status:** pre-alpha: the servers, the clients and the errors. Next, an
-export of the services for client SDKs.
+**Status:** pre-alpha: the servers, the clients, the errors and the
+export of the services.
 
 ## Development
 

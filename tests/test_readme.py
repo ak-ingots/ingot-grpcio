@@ -3,7 +3,8 @@ The README for consumers works as written: its files of an application
 (the blocks starting with ``# app/<path>`` or ``// app/<path>``) make one,
 its protoc command generates the code of the contract, and its commands
 (``uv run python -m app ...``) run it: the server serves the contract,
-answers the call of the client, a command, and stops at a SIGINT.
+answers the call of the client, a command, and stops at a SIGINT; the
+export of its services generates an SDK.
 """
 
 import importlib.util
@@ -24,6 +25,11 @@ PROTOC = re.compile(r"^uv run python -m grpc_tools\.protoc (.*)$", re.M)
 COMMAND = re.compile(r"^uv run python -m app ([^#\n]*?) *(?:#.*)?$", re.M)
 SERVING = re.compile(r"<AppGrpcServer (\S+)>: serving (.*?) ▶")
 
+
+def is_sdk(argv: list[str]) -> bool:
+    return any(arg.startswith("--descriptor_set_in=") for arg in argv)
+
+
 # the wheel test installs the wheel alone, without the tools of development
 HAS_PROTOC = importlib.util.find_spec("grpc_tools") is not None
 
@@ -39,8 +45,10 @@ class ReadmeTestCase(unittest.TestCase):
         for path, code in FILE.findall(self.readme):
             (self.root / path).parent.mkdir(parents=True, exist_ok=True)
             (self.root / path).write_text(code)
-        [protoc] = PROTOC.findall(self.readme)
-        self.run_python("-m", "grpc_tools.protoc", *shlex.split(protoc))
+        # the code of the contract, then that of the SDK from the export
+        self.protocs = [shlex.split(argv) for argv in PROTOC.findall(self.readme)]
+        [protoc] = [argv for argv in self.protocs if not is_sdk(argv)]
+        self.run_python("-m", "grpc_tools.protoc", *protoc)
         env = {k: v for k, v in os.environ.items() if not k.startswith("APP_")}
         self.env = {
             **env,
@@ -108,7 +116,10 @@ class ReadmeTestCase(unittest.TestCase):
         calls = [argv for argv in commands if argv[0] == "say"]
         self.assertTrue(calls)
         self.run_forever(server, calls)
-        for argv in commands:
-            if argv is not server and argv not in calls:  # pragma: no cover
-                with self.subTest(argv):
-                    self.run_python("-m", "app", *argv)
+        [export] = [argv for argv in commands if argv[:2] == ["grpc", "export"]]
+        self.run_python("-m", "app", *export)
+        (self.root / "sdk").mkdir()
+        [protoc] = [argv for argv in self.protocs if is_sdk(argv)]
+        self.run_python("-m", "grpc_tools.protoc", *protoc)
+        generated = self.root / "sdk" / "app" / "proto" / "demo_pb2_grpc.py"
+        self.assertIn("class EchoStub", generated.read_text())

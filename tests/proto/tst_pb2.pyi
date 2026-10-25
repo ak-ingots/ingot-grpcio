@@ -5,6 +5,7 @@ isort:skip_file
 
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
+from google.protobuf import timestamp_pb2 as _timestamp_pb2
 import builtins as _builtins
 import sys
 import typing as _typing
@@ -21,15 +22,21 @@ class EchoRequest(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     TEXT_FIELD_NUMBER: _builtins.int
+    AT_FIELD_NUMBER: _builtins.int
     text: _builtins.str
+    @_builtins.property
+    def at(self) -> _timestamp_pb2.Timestamp:
+        """an import, for the export of the services with their dependencies"""
+
     def __init__(
         self,
         *,
         text: _builtins.str = ...,
+        at: _timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["at", b"at"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["text", b"text"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["at", b"at", "text", b"text"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

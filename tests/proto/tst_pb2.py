@@ -22,21 +22,22 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15tests/proto/tst.proto\x12\x03tst\"\x1b\n\x0b\x45\x63hoRequest\x12\x0c\n\x04text\x18\x01 \x01(\t\"\x19\n\tEchoReply\x12\x0c\n\x04text\x18\x01 \x01(\t2\xd5\x01\n\x04\x45\x63ho\x12+\n\x05Unary\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00\x12\x34\n\x0c\x43lientStream\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00(\x01\x12\x34\n\x0cServerStream\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00\x30\x01\x12\x34\n\nBidiStream\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00(\x01\x30\x01\x32\x32\n\x04Ping\x12*\n\x04Ping\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15tests/proto/tst.proto\x12\x03tst\x1a\x1fgoogle/protobuf/timestamp.proto\"C\n\x0b\x45\x63hoRequest\x12\x0c\n\x04text\x18\x01 \x01(\t\x12&\n\x02\x61t\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\x19\n\tEchoReply\x12\x0c\n\x04text\x18\x01 \x01(\t2\xd5\x01\n\x04\x45\x63ho\x12+\n\x05Unary\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00\x12\x34\n\x0c\x43lientStream\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00(\x01\x12\x34\n\x0cServerStream\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00\x30\x01\x12\x34\n\nBidiStream\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00(\x01\x30\x01\x32\x32\n\x04Ping\x12*\n\x04Ping\x12\x10.tst.EchoRequest\x1a\x0e.tst.EchoReply\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'tests.proto.tst_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_ECHOREQUEST']._serialized_start=30
-  _globals['_ECHOREQUEST']._serialized_end=57
-  _globals['_ECHOREPLY']._serialized_start=59
-  _globals['_ECHOREPLY']._serialized_end=84
-  _globals['_ECHO']._serialized_start=87
-  _globals['_ECHO']._serialized_end=300
-  _globals['_PING']._serialized_start=302
-  _globals['_PING']._serialized_end=352
+  _globals['_ECHOREQUEST']._serialized_start=63
+  _globals['_ECHOREQUEST']._serialized_end=130
+  _globals['_ECHOREPLY']._serialized_start=132
+  _globals['_ECHOREPLY']._serialized_end=157
+  _globals['_ECHO']._serialized_start=160
+  _globals['_ECHO']._serialized_end=373
+  _globals['_PING']._serialized_start=375
+  _globals['_PING']._serialized_end=425
 # @@protoc_insertion_point(module_scope)
