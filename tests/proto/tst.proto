@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package tst;
 
+import "google/protobuf/timestamp.proto";
+
 // A service of every kind of RPC, for the tests of the addon.
 service Echo {
   rpc Unary (EchoRequest) returns (EchoReply) {}
@@ -17,6 +19,8 @@ service Ping {
 
 message EchoRequest {
   string text = 1;
+  // an import, for the export of the services with their dependencies
+  google.protobuf.Timestamp at = 2;
 }
 
 message EchoReply {
