@@ -20,9 +20,9 @@ class GrpcServicer(Entity):
     A servicer: the implementation of the RPCs of a service, extending the
     generated base class too. It reaches the project as any entity does::
 
-        class Greeter(GrpcServicer, demo_pb2_grpc.GreeterServicer):
+        class Echo(GrpcServicer, demo_pb2_grpc.EchoServicer):
             @t.override
-            async def SayHello(self, request, context): ...
+            async def Say(self, request, context): ...
 
     A :class:`GrpcService` names it and creates it.
     """
@@ -34,18 +34,16 @@ class GrpcService(Entity):
     :class:`~ingot_grpcio.grpc.api.GrpcApi`. A subclass names the service
     and its ``_pb2_grpc`` module as arguments of the class, and the class
     finds the rest by the names grpcio generates when it is created:
-    :attr:`DESCRIPTOR`, :attr:`SERVICER_BASE` (``GreeterServicer``),
-    :attr:`STUB` (``GreeterStub``) and ``add_GreeterServicer_to_server``::
+    :attr:`DESCRIPTOR`, :attr:`SERVICER_BASE` (``EchoServicer``),
+    :attr:`STUB` (``EchoStub``) and ``add_EchoServicer_to_server``::
 
-        class GreeterService(
-            GrpcService, full_name="demo.Greeter", module=demo_pb2_grpc
-        ):
-            SERVICER = Greeter
+        class EchoService(GrpcService, full_name="demo.Echo", module=demo_pb2_grpc):
+            SERVICER = Echo
 
     :attr:`SERVICER`, the implementation, is optional: a contract alone
     gives the stub to the clients of a server written in anything, and no
     server of the project serves it. It must extend :attr:`SERVICER_BASE`.
-    A refined implementation (``AppGreeter(Greeter)``) is a subclass of the
+    A refined implementation (``AppEcho(Echo)``) is a subclass of the
     service; another one altogether is a subclass of the contract, the
     service without a servicer. A class with no service named is a base of
     other services.

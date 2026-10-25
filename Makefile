@@ -51,7 +51,7 @@ wheel-test: all  ## unittest on the built wheel, once per interpreter in PYTHONS
 		trap 'rm -rf "$$tmp"' EXIT; \
 		uv venv --quiet --python $$py "$$tmp/venv"; \
 		uv pip install --quiet --python "$$tmp/venv/bin/python" dist/*.whl; \
-		cp -r tests "$$tmp/"; \
+		cp -r tests README.md "$$tmp/"; \
 		(cd "$$tmp" && INGOT_GRPCIO_WHEEL_TEST=1 venv/bin/python -m unittest discover -s tests -t .); \
 		rm -rf "$$tmp"; \
 	done

@@ -16,7 +16,7 @@ class GrpcApi(Unit):
     which of them each server serves::
 
         class AppGrpcApi(GrpcApi):
-            greeter = Slot(GreeterService)
+            echo = Slot(EchoService)
 
     A service is in the API once: two slots of one service fail the class.
     """
