@@ -235,6 +235,19 @@ wheels = [
 ]
 
 [[package]]
+name = "grpcio-reflection"
+version = "1.84.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "grpcio" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d8/16/dc6673110945d3d2a17d862516b67e0237dabdbaaa6ea1c8ccd76fb704b1/grpcio_reflection-1.84.1.tar.gz", hash = "sha256:09d72642fbabaf45f8fb9c86b0d3cf45945fb7c7c1c4a2dd3321dfdb05cbe2f8", size = 19296, upload-time = "2026-10-22T15:04:09.537Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/fa/08897e53004f0e61bc4f7c2a17b34fd984b8f201c2d89db64ab0caac3ab2/grpcio_reflection-1.84.1-py3-none-any.whl", hash = "sha256:85d39fa166294159cb72b292429fdd711d64b5fb3495f744d4bc46b8a1a6fb87", size = 22985, upload-time = "2026-10-22T15:03:54.95Z" },
+]
+
+[[package]]
 name = "grpcio-status"
 version = "1.84.1"
 source = { registry = "https://pypi.org/simple" }
@@ -289,6 +302,11 @@ dependencies = [
     { name = "protobuf" },
 ]
 
+[package.optional-dependencies]
+reflection = [
+    { name = "grpcio-reflection" },
+]
+
 [package.dev-dependencies]
 changelog = [
     { name = "towncrier" },
@@ -299,6 +317,7 @@ dev = [
     { name = "flake8" },
     { name = "flake8-class-attributes-order" },
     { name = "flake8-pyproject" },
+    { name = "grpcio-reflection" },
     { name = "grpcio-tools" },
     { name = "mypy" },
     { name = "mypy-protobuf" },
@@ -311,10 +330,12 @@ dev = [
 requires-dist = [
     { name = "googleapis-common-protos", specifier = ">=1.70,<2" },
     { name = "grpcio", specifier = ">=1.84,<2" },
+    { name = "grpcio-reflection", marker = "extra == 'reflection'", specifier = ">=1.84,<2" },
     { name = "grpcio-status", specifier = ">=1.84,<2" },
     { name = "ingots", specifier = ">=0.31.0,<0.32" },
     { name = "protobuf", specifier = ">=6.31,<8" },
 ]
+provides-extras = ["reflection"]
 
 [package.metadata.requires-dev]
 changelog = [{ name = "towncrier" }]
@@ -324,6 +345,7 @@ dev = [
     { name = "flake8" },
     { name = "flake8-class-attributes-order" },
     { name = "flake8-pyproject" },
+    { name = "grpcio-reflection" },
     { name = "grpcio-tools", specifier = ">=1.84.1" },
     { name = "mypy" },
     { name = "mypy-protobuf", specifier = ">=5.1.0" },

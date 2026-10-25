@@ -16,7 +16,11 @@ descriptor naming a service by its generated stub and its optional servicer, a
 `GrpcServicer` holding the RPCs; a binding is a plain class of them, and a
 `GrpcServicesOwner` extending it gives each its servicer or stub),
 `servers/` the servers (`BaseGrpcServer`, a component with hooks for its
-configs; `DefaultGrpcServer` on `GRPC_DEFAULT_*`), `errors/` the policies
+configs; `DefaultGrpcServer` on `GRPC_DEFAULT_*`; the reflection, on by
+`GRPC_DEFAULT_IS_REFLECTION` with the extra `reflection`, is in
+`reflection.py`, the only module importing grpcio-reflection, imported only
+when it is on; `make wheel-test` installs the extras of `EXTRAS`),
+`errors/` the policies
 (`BaseGrpcErrorPolicy`, a strategy, tells how a server encodes an exception of
 the business logic into a `status_pb2.Status` and logs it;
 `BaseStaticGrpcErrorPolicy` declares it in constants; `InternalGrpcErrorPolicy`

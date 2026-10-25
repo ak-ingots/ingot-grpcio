@@ -162,8 +162,9 @@ GrpcService(demo_pb2_grpc.EchoStub, LoudEcho)` with `LoudEcho(Echo)`.
 The default server is configured
 by `GRPC_DEFAULT_LISTEN_HOST` (`[::]`), `GRPC_DEFAULT_PORT` (50051),
 `GRPC_DEFAULT_MAX_CONCURRENT_RPCS` (100, 0 for no limit),
-`GRPC_DEFAULT_SHUTDOWN_GRACE` (30 seconds for the calls in progress) and
-`GRPC_DEFAULT_IS_SEND_DEBUG_INFO` (off, see below). Another server in the
+`GRPC_DEFAULT_SHUTDOWN_GRACE` (30 seconds for the calls in progress),
+`GRPC_DEFAULT_IS_SEND_DEBUG_INFO` (off, see below) and
+`GRPC_DEFAULT_IS_REFLECTION` (off, see below). Another server in the
 same process extends `BaseGrpcServer` with configs and bindings of its
 own.
 
@@ -179,6 +180,18 @@ class AppGrpcServer(AppGrpcBinding, DefaultGrpcServer):
         yield from super()._iter_interceptors()
         yield AuthInterceptor()
 ```
+
+Reflection, the service of gRPC describing a server, lets visual clients
+such as grpcurl, grpcui or Postman find its RPCs and messages without the
+`.proto` files. `GRPC_DEFAULT_IS_REFLECTION` turns it on, with the extra
+`reflection` (`uv add "ingot-grpcio[reflection]"`): the server describes
+exactly what it serves, as `grpc export` writes it. It is off by default,
+as it tells the API to anyone who can call the server: a development
+build turns it on, `APP_GRPC_DEFAULT_IS_REFLECTION=on`.
+
+A server is created in its hook `_create_server()` and prepared in
+`_prepare_server()`: its services added, its port bound, the reflection
+added when it is on. Another addition goes there, after `super()`.
 
 ## Clients
 
