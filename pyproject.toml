@@ -20,7 +20,11 @@ classifiers = [
     "Typing :: Typed",
 ]
 # Before 1.0 a minor version of ingots may break its addons.
-dependencies = ["ingots>=0.31.0,<0.32"]
+dependencies = [
+    "grpcio>=1.84,<2",
+    "ingots>=0.31.0,<0.32",
+    "protobuf>=6.31,<8",
+]
 
 [project.urls]
 repository = "https://github.com/ak-ingots/ingot-grpcio"
@@ -46,15 +50,21 @@ dev = [
     "flake8",
     "flake8-class-attributes-order",
     "flake8-pyproject",
+    "grpcio-tools>=1.84.1",
     "mypy",
+    "mypy-protobuf>=5.1.0",
+    "types-grpcio>=1.84.0.20261021",
+    "types-protobuf>=7.35.1.20260906",
 ]
 changelog = ["towncrier"]
 
 [tool.black]
 line-length = 88
+# the code protoc generates from the .proto files of the tests
+extend-exclude = "_pb2(_grpc)?\\.pyi?$"
 
 [tool.flake8]
-exclude = [".git", ".venv"]
+exclude = [".git", ".venv", "*_pb2.py", "*_pb2_grpc.py", "*_pb2.pyi", "*_pb2_grpc.pyi"]
 max-line-length = 88
 extend-ignore = ["E203", "E701", "E704"]
 # Member order of ADR 0007 (ingots-libs). `__init_subclass__` is written with an
@@ -79,6 +89,13 @@ class_attributes_order = [
 strict = true
 python_version = "3.14"
 enable_error_code = ["deprecated", "explicit-override"]
+# the generated code is checked through the stubs mypy-protobuf writes
+exclude = ["_pb2(_grpc)?\\.py$"]
+
+[[tool.mypy.overrides]]
+# the stubs mypy-protobuf generates override without @override
+module = ["tests.proto.*"]
+disable_error_code = ["explicit-override"]
 
 [tool.towncrier]
 name = "ingot-grpcio"
