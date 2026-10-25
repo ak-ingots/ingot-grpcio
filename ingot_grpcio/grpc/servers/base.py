@@ -27,8 +27,11 @@ class BaseGrpcServer(GrpcServicesOwner, Component):
     servicer: ``server.echo``, created once with the project. It takes its
     settings from the hooks, which a subclass implements:
     :meth:`_get_listen_hosts`, :meth:`_get_port`,
-    :meth:`_get_max_concurrent_rpcs`, :meth:`_get_shutdown_grace` and
-    :meth:`_iter_interceptors`, which see every call.
+    :meth:`_get_max_concurrent_rpcs`, :meth:`_get_shutdown_grace`,
+    :meth:`_get_is_reflection` and :meth:`_iter_interceptors`, which see
+    every call. Configured, it is created in :meth:`_create_server` and
+    prepared in :meth:`_prepare_server`, which a subclass extends to add
+    more.
 
     :raises TypeError: a service of the class has no servicer.
     """
@@ -60,21 +63,11 @@ class BaseGrpcServer(GrpcServicesOwner, Component):
 
     @t.override
     async def _configure(self) -> None:
-        server = aio.server(
-            interceptors=list(self._iter_interceptors()),
-            maximum_concurrent_rpcs=self._get_max_concurrent_rpcs(),
-        )
-        services = []
-        for service in self.grpc_services_iter():
-            service.add_to_server(self._grpc_services_get(service), server)
-            services.append(service.full_name)
-        port = self._get_port()
-        addresses = []
-        for host in self._get_listen_hosts():
-            bound = server.add_insecure_port(f"{host}:{port}")
-            addresses.append(f"{host}:{bound}")
+        server = self._create_server()
+        self._prepare_server(server)
         await server.start()
-        self._server, self._addresses = server, tuple(addresses)
+        self._server = server
+        services = [service.full_name for service in self.grpc_services_iter()]
         if services:
             logger.info("%r: serving %s", self, ", ".join(services))
         else:
@@ -100,6 +93,41 @@ class BaseGrpcServer(GrpcServicesOwner, Component):
             servicers[service.name] = servicer
             return servicer
 
+    def _create_server(self) -> aio.Server:
+        """
+        The server of grpcio, not yet prepared: with the interceptors of
+        :meth:`_iter_interceptors` and :meth:`_get_max_concurrent_rpcs`.
+        """
+        return aio.server(
+            interceptors=list(self._iter_interceptors()),
+            maximum_concurrent_rpcs=self._get_max_concurrent_rpcs(),
+        )
+
+    def _prepare_server(self, server: aio.Server) -> None:
+        """
+        Prepares the server before it starts: adds the servicers of its
+        services, binds its port on its hosts and adds the reflection when it
+        is on. An override adding more calls ``super()`` first to keep what
+        its bases prepare.
+
+        :raises ImportError: the reflection is on without the extra
+            ``reflection``.
+        """
+        services = list(self.grpc_services_iter())
+        for service in services:
+            service.add_to_server(self._grpc_services_get(service), server)
+        port = self._get_port()
+        addresses = []
+        for host in self._get_listen_hosts():
+            bound = server.add_insecure_port(f"{host}:{port}")
+            addresses.append(f"{host}:{bound}")
+        self._addresses = tuple(addresses)
+        if self._get_is_reflection():
+            from .reflection import enable_reflection  # the extra reflection
+
+            enable_reflection(server, services)
+            logger.info("%r: reflection on", self)
+
     def _get_listen_hosts(self) -> tuple[str, ...]:
         """The hosts to listen on: ``("[::]",)`` for every interface."""
         raise NotImplementedError(f"{type(self).__qualname__}._get_listen_hosts")
@@ -115,6 +143,14 @@ class BaseGrpcServer(GrpcServicesOwner, Component):
     def _get_shutdown_grace(self) -> float:
         """The seconds the calls in progress get to finish at the shutdown."""
         raise NotImplementedError(f"{type(self).__qualname__}._get_shutdown_grace")
+
+    def _get_is_reflection(self) -> bool:
+        """
+        Whether the server describes its services by the reflection of gRPC,
+        with the extra ``reflection``: it tells the API to anyone who can
+        call the server.
+        """
+        raise NotImplementedError(f"{type(self).__qualname__}._get_is_reflection")
 
     def _iter_interceptors(self) -> "Iterator[aio.ServerInterceptor]":
         """

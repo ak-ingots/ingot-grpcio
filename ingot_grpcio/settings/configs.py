@@ -29,5 +29,6 @@ class GrpcConfigs(Configs):
     GRPC_DEFAULT_MAX_CONCURRENT_RPCS = IntConfig(100)  # 0: no limit
     GRPC_DEFAULT_SHUTDOWN_GRACE = FloatConfig(30.0)  # seconds
     GRPC_DEFAULT_IS_SEND_DEBUG_INFO = BoolConfig(False)  # tracebacks to clients
+    GRPC_DEFAULT_IS_REFLECTION = BoolConfig(False)  # the API to clients, by extra
     # its client, on the port of the server
     GRPC_DEFAULT_HOST = StrConfig("localhost")

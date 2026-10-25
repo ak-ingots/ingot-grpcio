@@ -42,6 +42,10 @@ class DefaultGrpcServer(BaseGrpcServer):
         return self.project.settings.configs.GRPC_DEFAULT_SHUTDOWN_GRACE
 
     @t.override
+    def _get_is_reflection(self) -> bool:
+        return self.project.settings.configs.GRPC_DEFAULT_IS_REFLECTION
+
+    @t.override
     def _iter_interceptors(self) -> "Iterator[aio.ServerInterceptor]":
         configs = self.project.settings.configs
         yield ServerGrpcErrorsInterceptor(

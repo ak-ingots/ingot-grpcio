@@ -32,6 +32,10 @@ dependencies = [
 repository = "https://github.com/ak-ingots/ingot-grpcio"
 changelog = "https://github.com/ak-ingots/ingot-grpcio/blob/main/CHANGELOG.md"
 
+# One extra per integration: an application installs only what it uses.
+[project.optional-dependencies]
+reflection = ["grpcio-reflection>=1.84,<2"]
+
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14"]
 build-backend = "uv_build"
@@ -52,6 +56,7 @@ dev = [
     "flake8",
     "flake8-class-attributes-order",
     "flake8-pyproject",
+    "grpcio-reflection",
     "grpcio-tools>=1.84.1",
     "mypy",
     "mypy-protobuf>=5.1.0",
@@ -99,6 +104,11 @@ exclude = ["_pb2(_grpc)?\\.py$"]
 # the stubs mypy-protobuf generates override without @override
 module = ["tests.proto.*"]
 disable_error_code = ["explicit-override"]
+
+[[tool.mypy.overrides]]
+# grpcio-reflection ships neither stubs nor py.typed
+module = ["grpc_reflection.*"]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 # googleapis-common-protos ships the stubs of its code, without py.typed
