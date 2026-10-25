@@ -1,6 +1,6 @@
-"""The handler of the errors: it applies the policies of the project."""
+"""The handler of the errors of a server: it applies the policies."""
 
-__all__ = ("GrpcErrorHandler",)
+__all__ = ("ServerGrpcErrorHandler",)
 
 import logging
 import traceback
@@ -9,27 +9,24 @@ import typing as t
 from google.rpc import error_details_pb2, status_pb2
 from ingots.puer import Entity
 
-from .policies import BaseGrpcErrorPolicy
 from .error import GrpcError
+from .policies import BaseGrpcErrorPolicy
 
 if t.TYPE_CHECKING:
-    from grpc import aio
-
     from ingot_grpcio.project import GrpcProject
 
 logger = logging.getLogger(__name__)
 
 
-class GrpcErrorHandler(Entity):
+class ServerGrpcErrorHandler(Entity):
     """
-    Applies the policies of ``grpc.errors``: a server handles an exception
-    by the policy of its class, or of the nearest base class that has one;
-    a client decodes a status into a :class:`GrpcError`, its code, message
-    and ``ErrorInfo`` at hand. A project changes how they are applied, its
-    logging for one, in a subclass::
+    Applies the policies of ``grpc.errors`` on a server: it handles an
+    exception by the policy of its class, or of the nearest base class that
+    has one. A project changes how they are applied, its logging for one,
+    in a subclass::
 
         class AppGrpcErrors(GrpcErrors):
-            handler = Slot(AppGrpcErrorHandler)
+            server_handler = Slot(AppServerGrpcErrorHandler)
     """
 
     project: "GrpcProject"
@@ -59,24 +56,6 @@ class GrpcErrorHandler(Entity):
         if is_debug_info:
             status.details.add().Pack(build_debug_info(error))
         return status
-
-    @t.final
-    def decode(self, status: status_pb2.Status) -> GrpcError:
-        """The error of a status, as a client sees it."""
-        return GrpcError.from_status(status)
-
-    @t.final
-    def decode_rpc_error(self, error: "aio.AioRpcError") -> GrpcError:
-        """
-        The error of a failed call, by :meth:`decode`: of the status the
-        server sent with its details, or of the code and message alone when
-        it sent none.
-        """
-        details = dict(error.trailing_metadata() or ()).get(STATUS_DETAILS_KEY)
-        if isinstance(details, bytes):
-            return self.decode(status_pb2.Status.FromString(details))
-        code, message = error.code().value[0], error.details() or ""
-        return self.decode(status_pb2.Status(code=code, message=message))
 
     def _log(
         self,
@@ -108,7 +87,3 @@ def build_debug_info(error: BaseException) -> error_details_pb2.DebugInfo:
         stack_entries=traceback.format_tb(error.__traceback__),
         detail=f"{type(error).__qualname__}: {error}",
     )
-
-
-# the trailing metadata of a status with its details, as grpcio-status sends it
-STATUS_DETAILS_KEY = "grpc-status-details-bin"

@@ -12,9 +12,9 @@ from grpc import aio
 
 from ingot_grpcio import GrpcProject
 from ingot_grpcio.grpc import GrpcUnit
-from ingot_grpcio.grpc.api import GrpcApi, GrpcService, GrpcServicer
-from ingot_grpcio.grpc.bindings import AutoGrpcBinding, GrpcBindings
-from ingot_grpcio.grpc.servers import DefaultGrpcServer
+from ingot_grpcio.grpc.clients import DefaultGrpcClient
+from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
+from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
 from ingots.puer import Slot
 from ingots.puer.cli import CommandRunner
 
@@ -58,25 +58,38 @@ class Ping(GrpcServicer, tst_pb2_grpc.PingServicer):
         return EchoReply(text="pong")
 
 
-class EchoService(GrpcService, full_name="tst.Echo", module=tst_pb2_grpc):
-    SERVICER = Echo
+class TstGrpcBinding:
+    echo = GrpcService(tst_pb2_grpc.EchoStub, Echo)
+    ping = GrpcService(tst_pb2_grpc.PingStub, Ping)
 
 
-class PingService(GrpcService, full_name="tst.Ping", module=tst_pb2_grpc):
-    SERVICER = Ping
+class TstGrpcServer(TstGrpcBinding, DefaultGrpcServer):
+    pass
 
 
-class TstGrpcApi(GrpcApi):
-    echo = Slot(EchoService)
-    ping = Slot(PingService)
+class TstGrpcServers(GrpcServers):
+    default = Slot(TstGrpcServer)
 
 
 class TstGrpcUnit(GrpcUnit):
-    api = Slot(TstGrpcApi)
+    servers = Slot(TstGrpcServers)
 
 
 class TstProject(GrpcProject):
     grpc = Slot(TstGrpcUnit)
+
+
+def make_project(server_cls: type[DefaultGrpcServer]) -> type[GrpcProject]:
+    class Servers(GrpcServers):
+        default = Slot(server_cls)
+
+    class Unit(GrpcUnit):
+        servers = Slot(Servers)
+
+    class Project(GrpcProject):
+        grpc = Slot(Unit)
+
+    return Project
 
 
 async def requests(*texts: str) -> AsyncIterator[EchoRequest]:
@@ -127,10 +140,32 @@ class ServerTestCase(unittest.IsolatedAsyncioTestCase):
         replies = [r.text async for r in echo.BidiStream(requests("a", "b"))]
         self.assertEqual(replies, ["A", "B"])
 
-    async def test_every_service_of_the_api_is_served(self) -> None:
+    async def test_every_service_of_the_bindings_is_served(self) -> None:
         _, server = await self.start()
         ping = tst_pb2_grpc.PingStub(await self.connect(server))
         self.assertEqual((await ping.Ping(EchoRequest())).text, "pong")
+
+    async def test_a_server_serves_only_its_bindings(self) -> None:
+        class PingOnlyBinding:
+            ping = GrpcService(tst_pb2_grpc.PingStub, Ping)
+
+        class PingOnlyServer(PingOnlyBinding, DefaultGrpcServer):
+            pass
+
+        _, server = await self.start(make_project(PingOnlyServer))
+        channel = await self.connect(server)
+        ping = tst_pb2_grpc.PingStub(channel)
+        self.assertEqual((await ping.Ping(EchoRequest())).text, "pong")
+        with self.assertRaises(aio.AioRpcError) as raised:
+            await tst_pb2_grpc.EchoStub(channel).Unary(EchoRequest(text="a"))
+        self.assertEqual(raised.exception.code(), grpc.StatusCode.UNIMPLEMENTED)
+
+    async def test_the_servicer_is_created_once_with_the_project(self) -> None:
+        project, server = await self.start()
+        servicer = t.cast(TstGrpcServer, server).echo
+        self.assertIsInstance(servicer, Echo)
+        self.assertIs(t.cast(TstGrpcServer, server).echo, servicer)
+        self.assertIs(servicer.project, project)
 
     async def test_the_server_tells_its_addresses(self) -> None:
         _, server = await self.start()
@@ -138,7 +173,7 @@ class ServerTestCase(unittest.IsolatedAsyncioTestCase):
         host, port = address.rsplit(":", 1)
         self.assertEqual(host, "127.0.0.1")
         self.assertGreater(int(port), 0)
-        self.assertEqual(repr(server), f"<DefaultGrpcServer {address}>")
+        self.assertEqual(repr(server), f"<TstGrpcServer {address}>")
 
     async def test_a_server_without_services_warns(self) -> None:
         with self.assertLogs("ingot_grpcio", "WARNING") as logs:
@@ -148,7 +183,7 @@ class ServerTestCase(unittest.IsolatedAsyncioTestCase):
             logs.output,
             [
                 f"WARNING:ingot_grpcio.grpc.servers.base:<DefaultGrpcServer "
-                f"{address}>: serving nothing: its binding gives no services"
+                f"{address}>: serving nothing: it extends no binding"
             ],
         )
         self.assertTrue(server.addresses)
@@ -191,234 +226,171 @@ class ComponentTestCase(unittest.TestCase):
             code = CommandRunner(TstProject, argv).run()
         self.assertEqual(code, 0)
         self.assertIn(
-            "grpc.servers.default: DefaultGrpcServer, shutdown order 2\n",
+            "grpc.servers.default: TstGrpcServer, shutdown order 2\n",
             out.getvalue(),
         )
 
 
-class PingOnlyGrpcBinding(AutoGrpcBinding):
-    project: "TstProject"
-
-    @t.override
-    def _iter_services(self) -> t.Iterator[GrpcService]:
-        yield self.project.grpc.api.ping
-
-
-class BindingTestCase(ServerTestCase):
-    def make_project(self, binding: type[AutoGrpcBinding]) -> type[TstProject]:
-        class Bindings(GrpcBindings):
-            default = Slot(binding)
-
-        class Unit(TstGrpcUnit):
-            bindings = Slot(Bindings)
-
-        class Project(TstProject):
-            grpc = Slot(Unit)
-
-        return Project
-
-    async def test_the_binding_chooses_the_services_of_the_server(self) -> None:
-        _, server = await self.start(self.make_project(PingOnlyGrpcBinding))
-        channel = await self.connect(server)
-        ping = tst_pb2_grpc.PingStub(channel)
-        self.assertEqual((await ping.Ping(EchoRequest())).text, "pong")
-        with self.assertRaises(aio.AioRpcError) as raised:
-            await tst_pb2_grpc.EchoStub(channel).Unary(EchoRequest(text="a"))
-        self.assertEqual(raised.exception.code(), grpc.StatusCode.UNIMPLEMENTED)
-
-    async def test_the_auto_binding_skips_a_service_with_no_servicer(self) -> None:
-        class ContractOnly(GrpcService, full_name="tst.Echo", module=tst_pb2_grpc):
-            pass
-
-        class Api(GrpcApi):
-            echo = Slot(ContractOnly)
-            ping = Slot(PingService)
-
-        class Unit(GrpcUnit):
-            api = Slot(Api)
-
-        class Project(GrpcProject):
-            grpc = Slot(Unit)
-
-        project, _ = await self.start(Project)
-        services = list(project.grpc.bindings.default.iter_services())
-        self.assertEqual([s.FULL_NAME for s in services], ["tst.Ping"])
-
-    async def test_a_binding_serves_only_what_is_implemented(self) -> None:
-        class ContractOnly(GrpcService, full_name="tst.Echo", module=tst_pb2_grpc):
-            pass
-
-        class Bad(AutoGrpcBinding):
-            @t.override
-            def _iter_services(self) -> t.Iterator[GrpcService]:
-                yield ContractOnly(self.project)
-
-        with self.assertRaisesRegex(
-            TypeError,
-            r"^<\S*Bad>: <\S*ContractOnly tst.Echo> has no SERVICER to serve$",
-        ):
-            await self.start(self.make_project(Bad))
-
-    async def test_a_binding_gives_a_service_once(self) -> None:
-        class Twice(AutoGrpcBinding):
-            project: "TstProject"
-
-            @t.override
-            def _iter_services(self) -> t.Iterator[GrpcService]:
-                yield self.project.grpc.api.ping
-                yield self.project.grpc.api.ping
-
-        with self.assertRaisesRegex(
-            TypeError, r"^<\S*Twice>: 'tst.Ping' is given twice$"
-        ):
-            await self.start(self.make_project(Twice))
-
-
 class ServiceTestCase(unittest.TestCase):
-    @t.override
-    def setUp(self) -> None:
-        self.enterContext(mock.patch.dict(os.environ, clear=True))
-
-    def test_the_generated_code_is_found_by_its_names(self) -> None:
-        self.assertIs(EchoService.SERVICER_BASE, tst_pb2_grpc.EchoServicer)
-        self.assertIs(EchoService.STUB, tst_pb2_grpc.EchoStub)
+    def test_the_generated_code_is_found_by_the_stub(self) -> None:
+        service = TstGrpcBinding.echo
+        self.assertEqual((service.name, service.full_name), ("echo", "tst.Echo"))
+        self.assertIs(service.servicer_base, tst_pb2_grpc.EchoServicer)
+        self.assertIs(service.servicer_cls, Echo)
         self.assertEqual(
-            [method.name for method in EchoService.DESCRIPTOR.methods],
+            [method.name for method in service.descriptor.methods],
             ["Unary", "ClientStream", "ServerStream", "BidiStream"],
         )
-        self.assertEqual(EchoService.DESCRIPTOR.file.name, "tests/proto/tst.proto")
+        self.assertEqual(service.descriptor.file.name, "tests/proto/tst.proto")
+        self.assertEqual(repr(service), "<GrpcService tst.Echo>")
 
     def test_a_contract_needs_no_servicer(self) -> None:
-        class ContractOnly(GrpcService, full_name="tst.Echo", module=tst_pb2_grpc):
-            pass
-
-        self.assertIs(ContractOnly.STUB, tst_pb2_grpc.EchoStub)
-        project = TstProject()
+        contract = GrpcService(tst_pb2_grpc.EchoStub)
+        self.assertIsNone(contract.servicer_cls)
+        with mock.patch.dict(os.environ, clear=True):
+            project = TstProject()
         with self.assertRaisesRegex(
-            LookupError, r"ContractOnly tst.Echo> has no SERVICER: nothing implements"
+            LookupError, r"^<GrpcService tst.Echo> has no servicer: nothing"
         ):
-            ContractOnly(project).servicer
+            contract.build_servicer(project)
 
-    def test_an_unknown_service_fails(self) -> None:
+    def test_a_server_refuses_a_contract(self) -> None:
         with self.assertRaisesRegex(
-            LookupError, r"Bad: no gRPC service 'tst.Nothing': import its"
-        ):
-
-            class Bad(GrpcService, full_name="tst.Nothing", module=tst_pb2_grpc):
-                pass
-
-    def test_a_module_of_another_service_fails(self) -> None:
-        from .proto import tst_pb2
-
-        with self.assertRaisesRegex(
-            LookupError,
-            r"Bad: tests.proto.tst_pb2 is not the _pb2_grpc module of 'tst.Echo': "
-            r"no EchoServicer, EchoStub, add_EchoServicer_to_server$",
+            TypeError, r"\bBad.echo: <GrpcService tst.Echo> has no servicer to serve$"
         ):
 
-            class Bad(GrpcService, full_name="tst.Echo", module=tst_pb2):
-                pass
+            class Bad(DefaultGrpcServer):
+                echo = GrpcService(tst_pb2_grpc.EchoStub)
 
-    def test_the_name_and_the_module_go_together(self) -> None:
-        with self.assertRaisesRegex(
-            TypeError, r"Bad: full_name and module go together$"
-        ):
-
-            class Bad(GrpcService, full_name="tst.Echo"):
-                pass
-
-    def test_the_servicer_is_created_once_with_the_project(self) -> None:
-        project = TstProject()
-        service = project.grpc.api.echo
-        self.assertIsInstance(service.servicer, Echo)
-        self.assertIs(service.servicer, service.servicer)
-        self.assertIs(service.servicer.project, project)
-        self.assertEqual(repr(service), "<EchoService tst.Echo>")
-
-    def test_a_subclass_replaces_the_implementation(self) -> None:
-        class AppEcho(Echo):
-            pass
-
-        class AppEchoService(EchoService):
-            SERVICER = AppEcho
-
-        class Api(TstGrpcApi):
-            echo = Slot(AppEchoService)
-
-        project = TstProject()
-        self.assertIsInstance(Api(project).echo.servicer, AppEcho)
-        self.assertIs(AppEchoService.DESCRIPTOR, EchoService.DESCRIPTOR)
-
-    def test_another_implementation_extends_the_contract(self) -> None:
-        class EchoContract(GrpcService, full_name="tst.Echo", module=tst_pb2_grpc):
-            pass
-
-        class LoudEcho(GrpcServicer, tst_pb2_grpc.EchoServicer):
-            pass
-
-        class QuietEchoService(EchoContract):
-            SERVICER = Echo
-
-        class LoudEchoService(EchoContract):
-            SERVICER = LoudEcho
-
-        self.assertIs(LoudEchoService.STUB, QuietEchoService.STUB)
-        project = TstProject()
-        self.assertIsInstance(LoudEchoService(project).servicer, LoudEcho)
-
-    def test_a_service_without_a_name_is_a_base(self) -> None:
-        class AppService(GrpcService):
-            pass
-
-        class AppEchoService(AppService, full_name="tst.Echo", module=tst_pb2_grpc):
-            SERVICER = Echo
-
-        project = TstProject()
-        self.assertRegex(repr(AppService(project)), r"^<\S*AppService ->$")
-        self.assertIs(AppEchoService.STUB, tst_pb2_grpc.EchoStub)
+    def test_a_stub_is_one_grpcio_generates(self) -> None:
+        for stub in (EchoRequest, tst_pb2_grpc.EchoServicer, lambda channel: None):
+            with (
+                self.subTest(stub),
+                self.assertRaisesRegex(
+                    LookupError, r"is not a stub that grpcio generates$"
+                ),
+            ):
+                GrpcService(stub)  # type: ignore[arg-type]
 
     def test_the_servicer_extends_the_base_of_the_service(self) -> None:
         with self.assertRaisesRegex(
             TypeError,
-            r"Bad.SERVICER: Ping does not extend EchoServicer, the servicer base of",
+            r"^<GrpcService tst.Echo>: the servicer Ping does not extend "
+            r"EchoServicer$",
         ):
-
-            class Bad(EchoService):
-                SERVICER = Ping  # type: ignore[assignment]
+            GrpcService(tst_pb2_grpc.EchoStub, Ping)
 
     def test_the_servicer_is_a_servicer(self) -> None:
-        with self.assertRaisesRegex(TypeError, r"Bad.SERVICER: .*EchoServicer'> is no"):
+        with self.assertRaisesRegex(
+            TypeError, r"the servicer <class .*EchoServicer'> is no GrpcServicer$"
+        ):
+            GrpcService(
+                tst_pb2_grpc.EchoStub, tst_pb2_grpc.EchoServicer  # type: ignore
+            )
 
-            class Bad(EchoService):
-                SERVICER = tst_pb2_grpc.EchoServicer  # type: ignore[assignment]
+    def test_a_service_keeps_its_name(self) -> None:
+        service = GrpcService(tst_pb2_grpc.EchoStub, Echo)
+        with self.assertRaisesRegex(
+            TypeError, r"Bad.other: <GrpcService tst.Echo> is already echo$"
+        ):
 
-    def test_a_servicer_needs_a_service(self) -> None:
-        with self.assertRaisesRegex(TypeError, r"Bad: a SERVICER of no service$"):
-
-            class Bad(GrpcService):
-                SERVICER = Echo
+            class Bad:
+                echo = service
+                other = service
 
 
-class ApiTestCase(unittest.TestCase):
-    def test_a_service_is_in_the_api_once(self) -> None:
-        class OtherEchoService(EchoService):
+class OwnerTestCase(unittest.TestCase):
+    def test_the_services_come_from_the_bindings_in_order(self) -> None:
+        class EchoBinding:
+            echo = GrpcService(tst_pb2_grpc.EchoStub, Echo)
+
+        class PingBinding:
+            ping = GrpcService(tst_pb2_grpc.PingStub, Ping)
+
+        class PingEchoServer(PingBinding, EchoBinding, DefaultGrpcServer):
+            pass
+
+        names = [s.name for s in PingEchoServer.grpc_services_iter()]
+        self.assertEqual(names, ["ping", "echo"])
+        names = [s.name for s in TstGrpcServer.grpc_services_iter()]
+        self.assertEqual(names, ["echo", "ping"])
+
+    def test_a_subclass_refines_the_servicer(self) -> None:
+        class LoudEcho(Echo):
+            pass
+
+        class LoudServer(TstGrpcServer):
+            echo = GrpcService(tst_pb2_grpc.EchoStub, LoudEcho)
+
+        self.assertIs(LoudServer.echo.servicer_cls, LoudEcho)
+        services = list(LoudServer.grpc_services_iter())
+        self.assertEqual([s.name for s in services], ["echo", "ping"])
+
+    def test_a_subclass_drops_a_service(self) -> None:
+        class EchoOnlyServer(TstGrpcServer):
+            ping = None  # type: ignore[assignment]
+
+        names = [service.name for service in EchoOnlyServer.grpc_services_iter()]
+        self.assertEqual(names, ["echo"])
+
+    def test_a_replacement_implements_a_contract(self) -> None:
+        class ContractBinding:
+            echo = GrpcService(tst_pb2_grpc.EchoStub)
+
+        class EchoServer(ContractBinding, DefaultGrpcServer):
+            echo = GrpcService(tst_pb2_grpc.EchoStub, Echo)  # type: ignore
+
+        self.assertIs(EchoServer.echo.servicer_cls, Echo)
+
+    def test_an_attribute_of_a_base_does_not_hide_a_service(self) -> None:
+        class Holder:
+            echo = None
+
+        class EchoServer(TstGrpcBinding, Holder, DefaultGrpcServer):  # type: ignore
+            pass
+
+        names = [service.name for service in EchoServer.grpc_services_iter()]
+        self.assertEqual(names, ["echo", "ping"])
+
+    def test_a_replacement_keeps_the_contract(self) -> None:
+        with self.assertRaisesRegex(
+            TypeError,
+            r"\bBad.echo: <GrpcService tst.Ping> replaces another service, "
+            r"<GrpcService tst.Echo>$",
+        ):
+
+            class Bad(TstGrpcServer):
+                echo = GrpcService(tst_pb2_grpc.PingStub, Ping)  # type: ignore
+
+    def test_a_replacement_extends_the_servicer(self) -> None:
+        class OtherEcho(GrpcServicer, tst_pb2_grpc.EchoServicer):
             pass
 
         with self.assertRaisesRegex(
-            TypeError, r"BadGrpcApi: 'tst.Echo' is in both echo and other$"
+            TypeError, r"\bBad.echo: the servicer \S*OtherEcho does not extend Echo$"
         ):
 
-            class BadGrpcApi(GrpcApi):
-                echo = Slot(EchoService)
-                other = Slot(OtherEchoService)
+            class Bad(TstGrpcServer):
+                # mypy sees it too: the servicer is no Echo
+                echo = GrpcService(
+                    tst_pb2_grpc.EchoStub, OtherEcho  # type: ignore[type-abstract]
+                )  # type: ignore[assignment]
 
-    def test_a_service_in_the_api_declares_its_name(self) -> None:
-        class AppService(GrpcService):
+    def test_a_replacement_keeps_the_servicer(self) -> None:
+        class Client(TstGrpcBinding, DefaultGrpcClient):
             pass
 
         with self.assertRaisesRegex(
-            TypeError, r"BadGrpcApi.app: .*AppService declares no FULL_NAME$"
+            TypeError, r"\bBad.echo: the servicer None does not extend Echo$"
         ):
 
-            class BadGrpcApi(GrpcApi):
-                app = Slot(AppService)
+            class Bad(Client):
+                echo = GrpcService(tst_pb2_grpc.EchoStub)
+
+    def test_a_service_is_given_once(self) -> None:
+        with self.assertRaisesRegex(
+            TypeError, r"\bBad: 'tst.Echo' is in both other and echo$"
+        ):
+
+            class Bad(TstGrpcServer):
+                other = GrpcService(tst_pb2_grpc.EchoStub, Echo)

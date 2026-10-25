@@ -3,22 +3,23 @@
 __all__ = (
     "BaseGrpcServer",
     "DefaultGrpcServer",
-    "GrpcErrorsInterceptor",
     "GrpcServers",
+    "ServerGrpcErrorsInterceptor",
 )
 
 from ingots.puer import Slot, Unit
 
 from .base import BaseGrpcServer
 from .default import DefaultGrpcServer
-from .interceptor import GrpcErrorsInterceptor
+from .interceptor import ServerGrpcErrorsInterceptor
 
 
 class GrpcServers(Unit):
     """
     The gRPC servers of the project: :attr:`default` for a start. An
     application with more servers in one process adds them in a subclass,
-    each a subclass of :class:`BaseGrpcServer` with configs of its own.
+    each a subclass of :class:`BaseGrpcServer` with configs and bindings of
+    its own.
     """
 
     default = Slot(DefaultGrpcServer)

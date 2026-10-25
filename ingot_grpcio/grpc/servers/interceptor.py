@@ -1,6 +1,6 @@
 """The interceptor encoding the exceptions of the RPCs of a server."""
 
-__all__ = ("GrpcErrorsInterceptor",)
+__all__ = ("ServerGrpcErrorsInterceptor",)
 
 import inspect
 import typing as t
@@ -12,21 +12,21 @@ from grpc_status import rpc_status
 if t.TYPE_CHECKING:
     from collections.abc import AsyncIterator, Awaitable, Callable
 
-    from ingot_grpcio.grpc.errors import GrpcErrorHandler
+    from ingot_grpcio.grpc.errors import ServerGrpcErrorHandler
 
 Behavior: t.TypeAlias = "Callable[..., t.Any]"
 Handler: t.TypeAlias = grpc.RpcMethodHandler
 
 
-class GrpcErrorsInterceptor(aio.ServerInterceptor):
+class ServerGrpcErrorsInterceptor(aio.ServerInterceptor):
     """
-    Handles an exception an RPC raises with the ``handler`` of the errors,
+    Handles an exception an RPC raises with the server handler of the errors,
     which logs and encodes it, and aborts the call with its status: every
     kind of RPC, streams included. An abort of the handler of the RPC
     itself passes as it is.
     """
 
-    def __init__(self, handler: "GrpcErrorHandler", is_debug_info: bool) -> None:
+    def __init__(self, handler: "ServerGrpcErrorHandler", is_debug_info: bool) -> None:
         self._handler = handler
         self._is_debug_info = is_debug_info
 
