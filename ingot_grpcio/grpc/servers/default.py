@@ -5,9 +5,12 @@ __all__ = ("DefaultGrpcServer",)
 import typing as t
 
 from .base import BaseGrpcServer
+from .interceptor import GrpcErrorsInterceptor
 
 if t.TYPE_CHECKING:
     from collections.abc import Iterator
+
+    from grpc import aio
 
     from ingot_grpcio.grpc.api import GrpcService
     from ingot_grpcio.project import GrpcProject
@@ -16,7 +19,8 @@ if t.TYPE_CHECKING:
 class DefaultGrpcServer(BaseGrpcServer):
     """
     The server of the configs ``GRPC_DEFAULT_*``, serving the services of
-    ``grpc.bindings.default``: by default, every service of the API.
+    ``grpc.bindings.default``: by default, every service of the API. It
+    logs and encodes the exceptions of the RPCs with ``grpc.errors.handler``.
     """
 
     project: "GrpcProject"
@@ -40,3 +44,10 @@ class DefaultGrpcServer(BaseGrpcServer):
     @t.override
     def _iter_services(self) -> "Iterator[GrpcService]":
         return self.project.grpc.bindings.default.iter_services()
+
+    @t.override
+    def _iter_interceptors(self) -> "Iterator[aio.ServerInterceptor]":
+        configs = self.project.settings.configs
+        yield GrpcErrorsInterceptor(
+            self.project.grpc.errors.handler, configs.GRPC_DEFAULT_IS_SEND_DEBUG_INFO
+        )

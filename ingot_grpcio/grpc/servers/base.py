@@ -25,8 +25,9 @@ class BaseGrpcServer(Component):
 
     A server takes its settings and services from the hooks, which a
     subclass implements: :meth:`_get_listen_hosts`, :meth:`_get_port`,
-    :meth:`_get_max_concurrent_rpcs`, :meth:`_get_shutdown_grace` and
-    :meth:`_iter_services`, the services of its binding.
+    :meth:`_get_max_concurrent_rpcs`, :meth:`_get_shutdown_grace`,
+    :meth:`_iter_services`, the services of its binding, and
+    :meth:`_iter_interceptors`, which see every call.
     """
 
     SHUTDOWN_ORDER = 2
@@ -49,7 +50,10 @@ class BaseGrpcServer(Component):
 
     @t.override
     async def _configure(self) -> None:
-        server = aio.server(maximum_concurrent_rpcs=self._get_max_concurrent_rpcs())
+        server = aio.server(
+            interceptors=list(self._iter_interceptors()),
+            maximum_concurrent_rpcs=self._get_max_concurrent_rpcs(),
+        )
         services = []
         for service in self._iter_services():
             service.add_to_server(server)
@@ -92,3 +96,12 @@ class BaseGrpcServer(Component):
     def _iter_services(self) -> "Iterator[GrpcService]":
         """The services to serve: those of the binding of the server."""
         raise NotImplementedError(f"{type(self).__qualname__}._iter_services")
+
+    def _iter_interceptors(self) -> "Iterator[aio.ServerInterceptor]":
+        """
+        The interceptors of the calls, the outermost first. A subclass adding
+        its own yields those of its base first, so that the interceptor of
+        the errors encodes theirs too: without it, grpcio sends a client the
+        text of an exception, as ``UNKNOWN``.
+        """
+        raise NotImplementedError(f"{type(self).__qualname__}._iter_interceptors")

@@ -1,11 +1,17 @@
 """The servers: the gRPC servers of the project, each a component."""
 
-__all__ = ("BaseGrpcServer", "DefaultGrpcServer", "GrpcServers")
+__all__ = (
+    "BaseGrpcServer",
+    "DefaultGrpcServer",
+    "GrpcErrorsInterceptor",
+    "GrpcServers",
+)
 
 from ingots.puer import Slot, Unit
 
 from .base import BaseGrpcServer
 from .default import DefaultGrpcServer
+from .interceptor import GrpcErrorsInterceptor
 
 
 class GrpcServers(Unit):

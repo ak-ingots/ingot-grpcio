@@ -133,13 +133,74 @@ A server serves the services of the binding of its name:
 implemented service of the API unless a subclass of `AutoGrpcBinding`
 chooses others in `_iter_services()`. The default server is configured
 by `GRPC_DEFAULT_LISTEN_HOST` (`[::]`), `GRPC_DEFAULT_PORT` (50051),
-`GRPC_DEFAULT_MAX_CONCURRENT_RPCS` (100, 0 for no limit) and
-`GRPC_DEFAULT_SHUTDOWN_GRACE` (30 seconds for the calls in progress).
-Another server in the same process extends `BaseGrpcServer` with configs
-and a binding of its own.
+`GRPC_DEFAULT_MAX_CONCURRENT_RPCS` (100, 0 for no limit),
+`GRPC_DEFAULT_SHUTDOWN_GRACE` (30 seconds for the calls in progress) and
+`GRPC_DEFAULT_IS_SEND_DEBUG_INFO` (off, see below). Another server in the
+same process extends `BaseGrpcServer` with configs and a binding of its
+own.
 
-**Status:** pre-alpha: the servers. Next, the errors of the calls, an export
-of the services for client SDKs, and the clients.
+The interceptors of a server, the middleware of gRPC, come from its hook
+`_iter_interceptors()`, the outermost first. The default server yields
+`GrpcErrorsInterceptor`, which encodes the errors; a subclass adding its
+own yields those of its base first:
+
+```python
+class AppGrpcServer(DefaultGrpcServer):
+    @t.override
+    def _iter_interceptors(self):
+        yield from super()._iter_interceptors()
+        yield AuthInterceptor()
+```
+
+## Errors
+
+The RPCs raise the exceptions of the business logic and see no protobuf. A
+policy in `grpc.errors` tells how the server answers an exception of its
+class, and of its subclasses: the status of the call, with a code, a
+message and an `ErrorInfo` of a domain, a reason and metadata, as
+[AIP-193](https://google.aip.dev/193) describes, and more
+[details](https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto)
+if it gives them; and how the server logs it. A client sees the status as
+a `GrpcError`. A static policy declares its status in constants:
+
+```python
+import grpc
+from ingot_grpcio.grpc.errors import BaseStaticGrpcErrorPolicy, GrpcErrors
+
+
+class InsufficientFundsPolicy(BaseStaticGrpcErrorPolicy):
+    EXCEPTION = InsufficientFunds
+    CODE = grpc.StatusCode.FAILED_PRECONDITION
+    DOMAIN = "shop.example.com"
+    REASON = "INSUFFICIENT_FUNDS"
+
+    @t.override
+    def _get_metadata(self, error):
+        return {"account": error.account}
+
+
+class AppGrpcErrors(GrpcErrors):
+    insufficient_funds = Slot(InsufficientFundsPolicy)
+```
+
+`AppGrpc` declares `errors = Slot(AppGrpcErrors)`. An exception takes the
+policy of its class or of its nearest base class with one. The server logs
+it at the `LOG_LEVEL` of the policy, `logging.INFO` by default, for an
+answer of the API, or `logging.WARNING` and up; `LOG_EXC_INFO = True` adds
+the traceback. Every other exception is logged at `ERROR` with its
+traceback and reaches the client as `INTERNAL`, "internal error". Only
+when `GRPC_DEFAULT_IS_SEND_DEBUG_INFO` is on, for development, the server
+adds the text and traceback of an exception to its status in a
+`DebugInfo`; a policy cannot. A policy of its own, on
+`BaseGrpcErrorPolicy`, may choose the status by the exception. A client
+turns a failed call into a `GrpcError` with
+`project.grpc.errors.handler.decode_rpc_error()`: the code, the message,
+the domain, reason and metadata of the `ErrorInfo`, and `find_detail()`
+for the rest. `GrpcErrorHandler` applies the policies: a subclass in
+`handler = Slot(...)` changes how, its logging for one (`_log()`).
+
+**Status:** pre-alpha: the servers and the errors. Next, the clients and an
+export of the services for client SDKs.
 
 ## Development
 
