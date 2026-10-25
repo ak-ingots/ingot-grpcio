@@ -56,6 +56,13 @@ wheel-test: all  ## unittest on the built wheel, once per interpreter in PYTHONS
 		rm -rf "$$tmp"; \
 	done
 
+# The code of the .proto files of the tests: grpcio's _pb2.py and _pb2_grpc.py,
+# with the stubs of mypy-protobuf, committed next to them.
+.PHONY: proto
+proto:  ## Generate the code of the .proto files of the tests
+	uv run python -m grpc_tools.protoc -I . --python_out=. --grpc_python_out=. \
+		--mypy_out=. --mypy_grpc_out=. tests/proto/*.proto
+
 .PHONY: format
 format:  ## Format code with black
 	uv run black $(SRC)

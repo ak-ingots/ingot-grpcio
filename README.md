@@ -9,6 +9,12 @@ Integration of grpcio, the gRPC library of Google, into Ingots applications:
 gRPC servers and clients on its API. An addon of
 [Ingots](https://github.com/ak-ingots/ingots).
 
+## Install
+
+```sh
+uv add ingot-grpcio
+```
+
 ```python
 import ingot_grpcio
 
@@ -23,8 +29,77 @@ from `ingot_grpcio.settings.configs`, and so on, as the addon guide of Ingots
 shows. The configs of the addon are named
 `GRPC_*`: `GRPC_LOGGING_LEVEL` sets the level of its logger, `ingot_grpcio`.
 
-**Status:** pre-alpha. The skeleton of the addon: its project, configs,
-settings and logging. Next, the servers and clients of grpcio, as components.
+## Servers
+
+`GrpcProject` holds `grpc`, a unit of three: `grpc.api`, the registry of
+the services; `grpc.bindings`, which of them each server serves; and
+`grpc.servers`, the servers, each a component. A service names its
+contract in a `.proto` file and the class implementing it, a servicer, in
+a slot of the API:
+
+```python
+import typing as t
+
+from ingot_grpcio import GrpcProject
+from ingot_grpcio.grpc import GrpcUnit
+from ingot_grpcio.grpc.api import GrpcApi, GrpcService, GrpcServicer
+from ingots.puer import Slot
+
+from .proto import demo_pb2_grpc
+
+class Greeter(GrpcServicer, demo_pb2_grpc.GreeterServicer):
+    @t.override
+    async def SayHello(self, request, context):
+        return HelloReply(message=f"Hello, {request.name}")
+
+
+class GreeterService(GrpcService, full_name="demo.Greeter", module=demo_pb2_grpc):
+    SERVICER = Greeter
+
+
+class AppGrpcApi(GrpcApi):
+    greeter = Slot(GreeterService)
+
+
+class AppGrpc(GrpcUnit):
+    api = Slot(AppGrpcApi)
+
+
+class AppProject(GrpcProject):
+    env_configs_prefix = "APP"
+    grpc = Slot(AppGrpc)
+```
+
+The application runs through its own `__main__.py`, which hands
+`AppProject` to `CommandRunner` (`ingots.puer.cli`), as `python -m app`:
+
+```sh
+uv run python -m app components run-forever --component grpc.servers.default
+```
+
+From the full name of the service and its `_pb2_grpc` module the class
+finds, by the names grpcio generates, the descriptor, the servicer base
+and the stub (`DESCRIPTOR`, `SERVICER_BASE`, `STUB`). The servicer extends
+that generated base, so that mypy checks its RPCs; the service creates it
+once, with the project. The servicer is optional: a service without one
+is a contract alone, for the clients of a server written in anything,
+which no server of the project serves. A refined implementation is a
+subclass of the service with another `SERVICER`, a subclass of its
+servicer; another one altogether is a subclass of the contract.
+
+A server serves the services of the binding of its name:
+`grpc.servers.default` those of `grpc.bindings.default`, every
+implemented service of the API unless a subclass of `AutoGrpcBinding`
+chooses others in `_iter_services()`. The default server is configured
+by `GRPC_DEFAULT_LISTEN_HOST` (`[::]`), `GRPC_DEFAULT_PORT` (50051),
+`GRPC_DEFAULT_MAX_CONCURRENT_RPCS` (100, 0 for no limit) and
+`GRPC_DEFAULT_SHUTDOWN_GRACE` (30 seconds for the calls in progress).
+Another server in the same process extends `BaseGrpcServer` with configs
+and a binding of its own. For `mypy`, generate the stubs of the code with
+[mypy-protobuf](https://github.com/nipunn1313/mypy-protobuf) too.
+
+**Status:** pre-alpha: the servers. Next, the errors of the calls, an export
+of the services for client SDKs, and the clients.
 
 ## Development
 

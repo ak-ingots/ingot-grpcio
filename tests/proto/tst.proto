@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package tst;
+
+// A service of every kind of RPC, for the tests of the addon.
+service Echo {
+  rpc Unary (EchoRequest) returns (EchoReply) {}
+  rpc ClientStream (stream EchoRequest) returns (EchoReply) {}
+  rpc ServerStream (EchoRequest) returns (stream EchoReply) {}
+  rpc BidiStream (stream EchoRequest) returns (stream EchoReply) {}
+}
+
+// A second service, to serve more than one.
+service Ping {
+  rpc Ping (EchoRequest) returns (EchoReply) {}
+}
+
+message EchoRequest {
+  string text = 1;
+}
+
+message EchoReply {
+  string text = 1;
+}
