@@ -3,7 +3,7 @@ The README for consumers works as written: its files of an application
 (the blocks starting with ``# app/<path>`` or ``// app/<path>``) make one,
 its protoc command generates the code of the contract, and its commands
 (``uv run python -m app ...``) run it: the server serves the contract,
-answers a call and stops at a SIGINT.
+answers the call of the client, a command, and stops at a SIGINT.
 """
 
 import importlib.util
@@ -22,24 +22,7 @@ README = pathlib.Path(__file__).parent.parent / "README.md"
 FILE = re.compile(r"^```\w+\n(?:#|//) (app/\S+)\n(.*?)^```$", re.M | re.S)
 PROTOC = re.compile(r"^uv run python -m grpc_tools\.protoc (.*)$", re.M)
 COMMAND = re.compile(r"^uv run python -m app ([^#\n]*?) *(?:#.*)?$", re.M)
-SERVING = re.compile(r"<DefaultGrpcServer (\S+)>: serving (.*?) ▶")
-CALL = """
-import asyncio
-
-from grpc import aio
-
-from app.proto import demo_pb2, demo_pb2_grpc
-
-
-async def main(address):
-    async with aio.insecure_channel(address) as channel:
-        stub = demo_pb2_grpc.EchoStub(channel)
-        reply = await stub.Say(demo_pb2.EchoMessage(text="ingots"))
-        print(reply.text)
-
-
-asyncio.run(main({address!r}))
-"""
+SERVING = re.compile(r"<AppGrpcServer (\S+)>: serving (.*?) ▶")
 
 # the wheel test installs the wheel alone, without the tools of development
 HAS_PROTOC = importlib.util.find_spec("grpc_tools") is not None
@@ -66,11 +49,11 @@ class ReadmeTestCase(unittest.TestCase):
             "APP_GRPC_DEFAULT_PORT": "0",
         }
 
-    def run_python(self, *argv: str) -> str:
+    def run_python(self, *argv: str, **env: str) -> str:
         done = subprocess.run(
             [sys.executable, *argv],
             cwd=self.root,
-            env=getattr(self, "env", None),
+            env={**getattr(self, "env", {}), **env} or None,
             capture_output=True,
             text=True,
             timeout=60,
@@ -78,7 +61,7 @@ class ReadmeTestCase(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         return done.stdout
 
-    def run_forever(self, *argv: str) -> None:
+    def run_forever(self, argv: list[str], calls: list[list[str]]) -> None:
         server = subprocess.Popen(
             [sys.executable, "-m", "app", *argv],
             cwd=self.root,
@@ -97,12 +80,20 @@ class ReadmeTestCase(unittest.TestCase):
             self.fail(f"the server did not start:\n{''.join(log)}")
         address, services = found.groups()
         self.assertEqual(services, "demo.Echo")
-        reply = self.run_python("-c", CALL.format(address=address))
-        self.assertEqual(reply, "ingots\n")
+        host, port = address.rsplit(":", 1)
+        for call in calls:
+            reply = self.run_python(
+                "-m",
+                "app",
+                *call,
+                APP_GRPC_DEFAULT_HOST=host,
+                APP_GRPC_DEFAULT_PORT=port,
+            )
+            self.assertEqual(reply, "ingots\n")
         server.send_signal(signal.SIGINT)
         _, rest = server.communicate(timeout=30)
         self.assertEqual(server.returncode, 0, rest)
-        self.assertIn(f"<DefaultGrpcServer {address}>: stopped", rest)
+        self.assertIn(f"<AppGrpcServer {address}>: stopped", rest)
 
     def test_the_application_files_are_given(self) -> None:
         paths = [path for path, _ in FILE.findall(self.readme)]
@@ -111,12 +102,13 @@ class ReadmeTestCase(unittest.TestCase):
         )
 
     def test_the_commands_run(self) -> None:
-        commands = COMMAND.findall(self.readme)
-        self.assertTrue(commands)
-        for command in commands:
-            with self.subTest(command):
-                argv = shlex.split(command)
-                if "run-forever" in argv:
-                    self.run_forever(*argv)
-                else:
+        commands = [shlex.split(command) for command in COMMAND.findall(self.readme)]
+        # the server runs forever, its clients call it in the meantime
+        [server] = [argv for argv in commands if "run-forever" in argv]
+        calls = [argv for argv in commands if argv[0] == "say"]
+        self.assertTrue(calls)
+        self.run_forever(server, calls)
+        for argv in commands:
+            if argv is not server and argv not in calls:  # pragma: no cover
+                with self.subTest(argv):
                     self.run_python("-m", "app", *argv)

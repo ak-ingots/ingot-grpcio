@@ -31,11 +31,12 @@ shows. The configs of the addon are named
 
 ## Servers
 
-`GrpcProject` holds `grpc`, a unit of three: `grpc.api`, the registry of
-the services; `grpc.bindings`, which of them each server serves; and
-`grpc.servers`, the servers, each a component. A service names its
-contract in a `.proto` file and the class implementing it, a servicer, in
-a slot of the API. The contract:
+`GrpcProject` holds `grpc`, a unit of three: `grpc.errors`, how the
+exceptions reach a client; `grpc.servers` and `grpc.clients`, the servers
+and their clients, each a component. A binding declares the services of
+a server, each a contract in a `.proto` file with the class implementing
+it, a servicer; the server and its client extend the binding. The
+contract:
 
 ```proto
 // app/proto/demo.proto
@@ -69,10 +70,13 @@ import typing as t
 
 from ingot_grpcio import GrpcProject
 from ingot_grpcio.grpc import GrpcUnit
-from ingot_grpcio.grpc.api import GrpcApi, GrpcService, GrpcServicer
+from ingot_grpcio.grpc.clients import DefaultGrpcClient, GrpcClients
+from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
+from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
 from ingots.puer import Slot
+from ingots.puer.cli import BaseCommand
 
-from .proto import demo_pb2_grpc
+from .proto import demo_pb2, demo_pb2_grpc
 
 
 class Echo(GrpcServicer, demo_pb2_grpc.EchoServicer):
@@ -81,21 +85,46 @@ class Echo(GrpcServicer, demo_pb2_grpc.EchoServicer):
         return request
 
 
-class EchoService(GrpcService, full_name="demo.Echo", module=demo_pb2_grpc):
-    SERVICER = Echo
+class AppGrpcBinding:
+    echo = GrpcService(demo_pb2_grpc.EchoStub, Echo)
 
 
-class AppGrpcApi(GrpcApi):
-    echo = Slot(EchoService)
+class AppGrpcServer(AppGrpcBinding, DefaultGrpcServer):
+    pass
+
+
+class AppGrpcClient(AppGrpcBinding, DefaultGrpcClient):
+    pass
+
+
+class AppGrpcServers(GrpcServers):
+    default = Slot(AppGrpcServer)
+
+
+class AppGrpcClients(GrpcClients):
+    default = Slot(AppGrpcClient)
 
 
 class AppGrpc(GrpcUnit):
-    api = Slot(AppGrpcApi)
+    servers = Slot(AppGrpcServers)
+    clients = Slot(AppGrpcClients)
+
+
+class Say(BaseCommand):
+    cli_description = "Says ingots to the server."
+    project: "AppProject"
+
+    @t.override
+    async def _run(self) -> None:
+        client = await self.project.grpc.clients.default
+        reply = await client.echo.Say(demo_pb2.EchoMessage(text="ingots"))
+        print(reply.text)
 
 
 class AppProject(GrpcProject):
     env_configs_prefix = "APP"
     grpc = Slot(AppGrpc)
+    say = Slot(Say)
 ```
 
 It runs through its own `__main__.py`, which hands `AppProject` to
@@ -118,39 +147,66 @@ sys.exit(CommandRunner(AppProject).run())
 uv run python -m app components run-forever --component grpc.servers.default
 ```
 
-From the full name of the service and its `_pb2_grpc` module the class
-finds, by the names grpcio generates, the descriptor, the servicer base
-and the stub (`DESCRIPTOR`, `SERVICER_BASE`, `STUB`). The servicer extends
-that generated base, so that mypy checks its RPCs; the service creates it
-once, with the project. The servicer is optional: a service without one
-is a contract alone, for the clients of a server written in anything,
-which no server of the project serves. A refined implementation is a
-subclass of the service with another `SERVICER`, a subclass of its
-servicer; another one altogether is a subclass of the contract.
+From the stub a `GrpcService` finds, by the names grpcio generates, the
+rest of the code of the service: its descriptor, the servicer base, the
+function adding a servicer to a server. The servicer extends that
+generated base, so that mypy checks its RPCs. The same attribute gives
+each side its own: `server.echo` is the servicer of the server, created
+once with the project, and `client.echo` the stub on the channel of the
+client. A server serves the services of the bindings it extends, in the
+order of its bases, and nothing else; a binding is a plain class, and a
+server may extend several. A subclass replacing a service keeps its
+contract and refines its servicer, as a slot does: `echo =
+GrpcService(demo_pb2_grpc.EchoStub, LoudEcho)` with `LoudEcho(Echo)`.
 
-A server serves the services of the binding of its name:
-`grpc.servers.default` those of `grpc.bindings.default`, every
-implemented service of the API unless a subclass of `AutoGrpcBinding`
-chooses others in `_iter_services()`. The default server is configured
+The default server is configured
 by `GRPC_DEFAULT_LISTEN_HOST` (`[::]`), `GRPC_DEFAULT_PORT` (50051),
 `GRPC_DEFAULT_MAX_CONCURRENT_RPCS` (100, 0 for no limit),
 `GRPC_DEFAULT_SHUTDOWN_GRACE` (30 seconds for the calls in progress) and
 `GRPC_DEFAULT_IS_SEND_DEBUG_INFO` (off, see below). Another server in the
-same process extends `BaseGrpcServer` with configs and a binding of its
+same process extends `BaseGrpcServer` with configs and bindings of its
 own.
 
 The interceptors of a server, the middleware of gRPC, come from its hook
 `_iter_interceptors()`, the outermost first. The default server yields
-`GrpcErrorsInterceptor`, which encodes the errors; a subclass adding its
-own yields those of its base first:
+`ServerGrpcErrorsInterceptor`, which encodes the errors; a subclass adding
+its own yields those of its base first:
 
 ```python
-class AppGrpcServer(DefaultGrpcServer):
+class AppGrpcServer(AppGrpcBinding, DefaultGrpcServer):
     @t.override
     def _iter_interceptors(self):
         yield from super()._iter_interceptors()
         yield AuthInterceptor()
 ```
+
+## Clients
+
+A client is a component too: `grpc.clients.default` calls the default
+server, the command `say` above for one, while the server runs:
+
+```sh
+uv run python -m app say
+```
+
+It calls `GRPC_DEFAULT_HOST` (`localhost`) on `GRPC_DEFAULT_PORT`, the
+port the server listens on, and the services of the bindings it extends,
+those of its server. Awaited, the client opens its channel and creates a
+stub for each service, once: `client.echo`, typed by mypy-protobuf as the
+async stub. The project closes the channel when it shuts down, before the
+servers. A client of another server, of the project or written in
+anything, extends `BaseGrpcClient` with its target (`_get_target()`) and
+bindings of its own: a contract alone, `GrpcService(EchoStub)` with no
+servicer, is enough for a client, and a server refuses it. A service the
+server does not serve fails as `UNIMPLEMENTED`.
+
+A failed call raises a `GrpcError`, the `AioRpcError` of grpcio as its
+cause, at the `await` of a unary call or at the failing read of a stream;
+the call stays a call of grpcio, with its metadata and code. The
+interceptors of a client come from `_iter_interceptors()` too, the
+outermost first; the default client yields `ClientGrpcErrorsInterceptor`.
+grpcio takes an interceptor of several kinds of RPCs for the first of
+them only, so a client splits one into a part for each.
 
 ## Errors
 
@@ -160,8 +216,8 @@ class, and of its subclasses: the status of the call, with a code, a
 message and an `ErrorInfo` of a domain, a reason and metadata, as
 [AIP-193](https://google.aip.dev/193) describes, and more
 [details](https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto)
-if it gives them; and how the server logs it. A client sees the status as
-a `GrpcError`. A static policy declares its status in constants:
+if it gives them; and how the server logs it. A client raises the status
+as a `GrpcError`. A static policy declares its status in constants:
 
 ```python
 import grpc
@@ -192,14 +248,28 @@ traceback and reaches the client as `INTERNAL`, "internal error". Only
 when `GRPC_DEFAULT_IS_SEND_DEBUG_INFO` is on, for development, the server
 adds the text and traceback of an exception to its status in a
 `DebugInfo`; a policy cannot. A policy of its own, on
-`BaseGrpcErrorPolicy`, may choose the status by the exception. A client
-turns a failed call into a `GrpcError` with
-`project.grpc.errors.handler.decode_rpc_error()`: the code, the message,
-the domain, reason and metadata of the `ErrorInfo`, and `find_detail()`
-for the rest. `GrpcErrorHandler` applies the policies: a subclass in
-`handler = Slot(...)` changes how, its logging for one (`_log()`).
+`BaseGrpcErrorPolicy`, may choose the status by the exception.
 
-**Status:** pre-alpha: the servers and the errors. Next, the clients and an
+A client catches the `GrpcError` of a failed call: the code, the message,
+the domain, reason and metadata of the `ErrorInfo`, and `find_detail()`
+for the rest. The classes of the exceptions stay on the server:
+
+```python
+try:
+    await shop.Pay(request)
+except GrpcError as error:
+    if error.reason != "INSUFFICIENT_FUNDS":
+        raise
+    account = error.metadata["account"]
+```
+
+Two handlers apply it all: `ServerGrpcErrorHandler` the policies on a
+server, `ClientGrpcErrorHandler` the decoding of a failed call on a
+client, which logs it at `DEBUG`. A subclass in
+`server_handler = Slot(...)` or `client_handler = Slot(...)` changes how,
+its logging for one (`_log()`).
+
+**Status:** pre-alpha: the servers, the clients and the errors. Next, an
 export of the services for client SDKs.
 
 ## Development

@@ -14,7 +14,6 @@ from grpc import aio
 
 from ingot_grpcio import GrpcProject
 from ingot_grpcio.grpc import GrpcUnit
-from ingot_grpcio.grpc.api import GrpcApi, GrpcService, GrpcServicer
 from ingot_grpcio.grpc.errors import (
     BaseGrpcErrorPolicy,
     BaseStaticGrpcErrorPolicy,
@@ -23,6 +22,7 @@ from ingot_grpcio.grpc.errors import (
     InternalGrpcErrorPolicy,
 )
 from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
+from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
 from ingots.puer import Slot
 
 from .proto import tst_pb2_grpc
@@ -125,12 +125,16 @@ class FailingEcho(GrpcServicer, tst_pb2_grpc.EchoServicer):
             await fail(request.text, context)
 
 
-class FailingEchoService(GrpcService, full_name="tst.Echo", module=tst_pb2_grpc):
-    SERVICER = FailingEcho
+class FailingGrpcBinding:
+    echo = GrpcService(tst_pb2_grpc.EchoStub, FailingEcho)
 
 
-class TstGrpcApi(GrpcApi):
-    echo = Slot(FailingEchoService)
+class FailingGrpcServer(FailingGrpcBinding, DefaultGrpcServer):
+    pass
+
+
+class TstGrpcServers(GrpcServers):
+    default = Slot(FailingGrpcServer)
 
 
 class TstGrpcErrors(GrpcErrors):
@@ -139,8 +143,8 @@ class TstGrpcErrors(GrpcErrors):
 
 
 class TstGrpcUnit(GrpcUnit):
-    api = Slot(TstGrpcApi)
     errors = Slot(TstGrpcErrors)
+    servers = Slot(TstGrpcServers)
 
 
 class TstProject(GrpcProject):
@@ -195,7 +199,7 @@ class ServerFixture(unittest.IsolatedAsyncioTestCase):
         return raised.exception
 
     async def decode(self, project: TstProject, error: aio.AioRpcError) -> GrpcError:
-        return project.grpc.errors.handler.decode_rpc_error(error)
+        return project.grpc.errors.client_handler.decode_rpc_error(error)
 
 
 class ServerTestCase(ServerFixture):
@@ -313,7 +317,7 @@ class GrpcErrorTestCase(unittest.TestCase):
         error = self.make(error_details_pb2.ErrorInfo(domain="other", reason="X"))
         with mock.patch.dict(os.environ, clear=True):
             project = TstProject()
-            decoded = project.grpc.errors.handler.decode(error.status)
+            decoded = project.grpc.errors.client_handler.decode(error.status)
         self.assertEqual(decoded.status, error.status)
 
     def test_the_error_pickles(self) -> None:
@@ -342,14 +346,14 @@ class RecordingInterceptor(aio.ServerInterceptor):
 RECORDING = RecordingInterceptor()
 
 
-class RecordingGrpcServer(DefaultGrpcServer):
+class RecordingGrpcServer(FailingGrpcServer):
     @t.override
     def _iter_interceptors(self) -> Iterator[aio.ServerInterceptor]:
         yield from super()._iter_interceptors()
         yield RECORDING
 
 
-class RecordingGrpcServers(GrpcServers):
+class RecordingGrpcServers(TstGrpcServers):
     default = Slot(RecordingGrpcServer)
 
 
@@ -373,7 +377,7 @@ class InterceptorTestCase(ServerFixture):
         with self.assertRaises(aio.AioRpcError) as raised:
             await tst_pb2_grpc.EchoStub(channel).Unary(EchoRequest(text="funds"))
         self.assertEqual(RECORDING.methods, ["/tst.Echo/Unary"])
-        decoded = project.grpc.errors.handler.decode_rpc_error(raised.exception)
+        decoded = project.grpc.errors.client_handler.decode_rpc_error(raised.exception)
         self.assertEqual(decoded.reason, "INSUFFICIENT_FUNDS")
 
 
@@ -408,19 +412,19 @@ class StrategyTestCase(unittest.TestCase):
     def test_a_policy_of_its_own_chooses_the_status(self) -> None:
         with mock.patch.dict(os.environ, clear=True):
             project = StockProject()
-        handler = project.grpc.errors.handler
+        handler = project.grpc.errors.server_handler
         for text in ("empty", "low"):
             with self.subTest(text), self.assertLogs("ingot_grpcio", "INFO") as logs:
                 status = handler.handle(OutOfStock.build(text), "/tst.Echo/Unary")
             self.assertIn(f"stock.example.com/{text.upper()}", logs.output[0])
-            self.assertEqual(handler.decode(status).reason, text.upper())
+            self.assertEqual(GrpcError.from_status(status).reason, text.upper())
 
 
 class RegistryTestCase(unittest.TestCase):
     def test_the_internal_policy_takes_every_other_exception(self) -> None:
         with mock.patch.dict(os.environ, clear=True):
             project = GrpcProject()
-            policy = project.grpc.errors.handler.find_policy(KeyError("k"))
+            policy = project.grpc.errors.server_handler.find_policy(KeyError("k"))
         self.assertIsInstance(policy, InternalGrpcErrorPolicy)
         self.assertEqual(
             repr(policy), "<InternalGrpcErrorPolicy ingot_grpcio/INTERNAL>"
@@ -456,7 +460,7 @@ class RegistryTestCase(unittest.TestCase):
                 except OutOfStock as error:
                     raised = error
                 with self.assertLogs("ingot_grpcio", "INFO") as logs:
-                    status = project.grpc.errors.handler.handle(
+                    status = project.grpc.errors.server_handler.handle(
                         raised, "/tst.Echo/Unary"
                     )
                 [record] = logs.records

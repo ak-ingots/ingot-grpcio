@@ -3,29 +3,32 @@
 __all__ = (
     "BaseGrpcErrorPolicy",
     "BaseStaticGrpcErrorPolicy",
+    "ClientGrpcErrorHandler",
     "GrpcError",
-    "GrpcErrorHandler",
     "GrpcErrors",
     "InternalGrpcErrorPolicy",
+    "ServerGrpcErrorHandler",
 )
 
 import typing as t
 
 from ingots.puer import Slot, Unit
 
-from .policies import BaseGrpcErrorPolicy
+from .client_handler import ClientGrpcErrorHandler
 from .error import GrpcError
-from .handler import GrpcErrorHandler
 from .internal import InternalGrpcErrorPolicy
+from .policies import BaseGrpcErrorPolicy
+from .server_handler import ServerGrpcErrorHandler
 from .static import BaseStaticGrpcErrorPolicy
 
 
 class GrpcErrors(Unit):
     """
-    The policies of the project, each in a slot of its own, and the
-    :attr:`handler` that finds them: by the class of an exception on a
-    server, by the domain and reason of a status on a client.
-    :attr:`internal` takes every exception no other policy takes::
+    The policies of the project, each in a slot of its own, and their
+    handlers: :attr:`server_handler` finds them by the class of an
+    exception, :attr:`client_handler` turns a failed call into a
+    :class:`GrpcError`. :attr:`internal` takes every exception no other
+    policy takes::
 
         class AppGrpcErrors(GrpcErrors):
             insufficient_funds = Slot(InsufficientFundsPolicy)
@@ -33,7 +36,8 @@ class GrpcErrors(Unit):
     An exception class has one policy, and so has a domain and reason.
     """
 
-    handler = Slot(GrpcErrorHandler)
+    server_handler = Slot(ServerGrpcErrorHandler)
+    client_handler = Slot(ClientGrpcErrorHandler)
     internal = Slot(InternalGrpcErrorPolicy)
 
     _policies_by_exception: t.ClassVar[dict[type[Exception], str]]

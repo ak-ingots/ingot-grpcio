@@ -17,8 +17,8 @@ from ingots.defaults.settings.configs import (
 class GrpcConfigs(Configs):
     """
     The configs of the defaults with those of grpcio. ``GRPC_DEFAULT_*`` are
-    the configs of the default server: another server takes configs of its
-    own, ``GRPC_<NAME>_*``.
+    the configs of the default server and its client: another server takes
+    configs of its own, ``GRPC_<NAME>_*``.
     """
 
     GRPC_LOGGING_LEVEL = LogLevelConfig(logging.INFO)
@@ -29,3 +29,5 @@ class GrpcConfigs(Configs):
     GRPC_DEFAULT_MAX_CONCURRENT_RPCS = IntConfig(100)  # 0: no limit
     GRPC_DEFAULT_SHUTDOWN_GRACE = FloatConfig(30.0)  # seconds
     GRPC_DEFAULT_IS_SEND_DEBUG_INFO = BoolConfig(False)  # tracebacks to clients
+    # its client, on the port of the server
+    GRPC_DEFAULT_HOST = StrConfig("localhost")
