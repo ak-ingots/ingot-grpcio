@@ -8,7 +8,8 @@ name: release
 # - Run by hand (workflow_dispatch), it is a rehearsal: main as
 #   X.Y.Z.devN, N the run number, to TestPyPI only.
 #
-# What is published is the build that `make wheel-test` tested.
+# What is published is the build that `make wheel-test` tested; PyPI takes
+# it once `make index-test` has installed and tested it as TestPyPI gives it.
 
 on:
   push:
@@ -25,6 +26,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -47,6 +50,8 @@ jobs:
         run: |
           release=$(uv version --short | sed 's/\.dev[0-9]*$//')
           uv version --frozen "$release.dev$GITHUB_RUN_NUMBER"
+      - id: version
+        run: echo "version=$(uv version --short)" >> "$GITHUB_OUTPUT"
       - run: make wheel-test
       - uses: actions/upload-artifact@v7
         with:
@@ -72,8 +77,22 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
 
+  # The package as TestPyPI gives it, the dependencies from PyPI: the same
+  # file as the build, installed and tested on every supported interpreter.
+  testpypi-check:
+    needs: [build, testpypi]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags since v8
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - run: make index-test VERSION=${{ needs.build.outputs.version }}
+
   pypi:
-    needs: testpypi
+    needs: testpypi-check
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     environment:

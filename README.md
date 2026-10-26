@@ -383,4 +383,5 @@ make all             # build the sdist and the wheel into dist/
 - A release is a pull request setting the version (`uv version X.Y.Z`) and
   collating the changelog (`make cl-build VERSION=X.Y.Z`), then the tag
   `vX.Y.Z` on `main`: the `release` workflow publishes the tested build to
-  TestPyPI, then to PyPI. Run by hand, it rehearses on TestPyPI only.
+  TestPyPI, tests it as installed from there (`make index-test`), then
+  publishes it to PyPI. Run by hand, it rehearses on TestPyPI only.
