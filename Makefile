@@ -65,7 +65,7 @@ index-test:  ## unittest on the wheel of VERSION as INDEX gives it (VERSION=X.Y.
 	@tmp=$$(mktemp -d); \
 		trap 'rm -rf "$$tmp"' EXIT; \
 		for attempt in $$(seq 30); do \
-			uvx --quiet pip download --quiet --no-deps --only-binary :all: \
+			uvx --quiet --python $(firstword $(PYTHONS)) pip download --quiet --no-deps --only-binary :all: \
 				--index-url $(INDEX) --dest "$$tmp" "ingot-grpcio==$(VERSION)" \
 				&& break; \
 			[ $$attempt -lt 30 ] || exit 1; \
