@@ -292,7 +292,7 @@ wheels = [
 
 [[package]]
 name = "ingot-grpcio"
-version = "0.10.0"
+version = "0.10.1.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "googleapis-common-protos" },

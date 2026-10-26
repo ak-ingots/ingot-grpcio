@@ -4,7 +4,8 @@ The README for consumers works as written: its files of an application
 its protoc command generates the code of the contract, and its commands
 (``uv run python -m app ...``) run it: the server serves the contract,
 answers the call of the client, a command, and stops at a SIGINT; the
-export of its services generates an SDK.
+export of its services generates an SDK. Its table of configs lists the
+configs of the addon with their defaults.
 """
 
 import importlib.util
@@ -23,6 +24,8 @@ README = pathlib.Path(__file__).parent.parent / "README.md"
 FILE = re.compile(r"^```\w+\n(?:#|//) (app/\S+)\n(.*?)^```$", re.M | re.S)
 PROTOC = re.compile(r"^uv run python -m grpc_tools\.protoc (.*)$", re.M)
 COMMAND = re.compile(r"^uv run python -m app ([^#\n]*?) *(?:#.*)?$", re.M)
+CONFIG_ROW = re.compile(r"^\| `(GRPC_\w+)` \| `([^`]*)` \|", re.M)
+CONFIG_LINE = re.compile(r"^(GRPC_\w+) = (.*)$", re.M)
 SERVING = re.compile(r"<AppGrpcServer (\S+)>: serving (.*?) ▶")
 
 
@@ -106,7 +109,14 @@ class ReadmeTestCase(unittest.TestCase):
     def test_the_application_files_are_given(self) -> None:
         paths = [path for path, _ in FILE.findall(self.readme)]
         self.assertEqual(
-            paths, ["app/proto/demo.proto", "app/project.py", "app/__main__.py"]
+            paths,
+            [
+                "app/project.py",
+                "app/__main__.py",
+                "app/proto/demo.proto",
+                "app/grpc.py",
+                "app/say.py",
+            ],
         )
 
     def test_the_commands_run(self) -> None:
@@ -115,11 +125,24 @@ class ReadmeTestCase(unittest.TestCase):
         [server] = [argv for argv in commands if "run-forever" in argv]
         calls = [argv for argv in commands if argv[0] == "say"]
         self.assertTrue(calls)
-        self.run_forever(server, calls)
         [export] = [argv for argv in commands if argv[:2] == ["grpc", "export"]]
+        for argv in commands:
+            if argv not in (server, *calls, export):
+                with self.subTest(argv):
+                    self.run_python("-m", "app", *argv)
+        self.run_forever(server, calls)
         self.run_python("-m", "app", *export)
         (self.root / "sdk").mkdir()
         [protoc] = [argv for argv in self.protocs if is_sdk(argv)]
         self.run_python("-m", "grpc_tools.protoc", *protoc)
         generated = self.root / "sdk" / "app" / "proto" / "demo_pb2_grpc.py"
         self.assertIn("class EchoStub", generated.read_text())
+
+    def test_the_table_lists_the_configs_of_the_addon(self) -> None:
+        # the defaults, without the host and port of the tests
+        self.env = {k: v for k, v in self.env.items() if not k.startswith("APP_GRPC")}
+        table = dict(CONFIG_ROW.findall(self.readme))
+        listed = dict(
+            CONFIG_LINE.findall(self.run_python("-m", "app", "settings", "list"))
+        )
+        self.assertEqual(table, listed)

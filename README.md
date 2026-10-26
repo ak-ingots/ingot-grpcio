@@ -6,30 +6,89 @@
 <!-- Links must be absolute: this README also renders on PyPI. -->
 
 Integration of grpcio, the gRPC library of Google, into Ingots applications:
-gRPC servers and clients on its API. An addon of
+gRPC servers and clients on its asynchronous API. An addon of
 [Ingots](https://github.com/ak-ingots/ingots).
 
-## Install
+**Status:** pre-alpha, on ingots 0.31: the servers, the clients, the errors
+and the export of the services.
+
+## For Consumers
+
+### Install
 
 ```sh
 uv add ingot-grpcio
 ```
 
+The extra `reflection` lets a server describe its services
+(`uv add "ingot-grpcio[reflection]"`, see [Serve](#serve)).
+
+### Integrate
+
+An application of Ingots has its own configs, settings, logging and project;
+each takes the class of the addon among its bases. The project takes the
+gRPC of the application, `AppGrpc`, and its command `say`, both below:
+
 ```python
-import ingot_grpcio
+# app/project.py
+import typing as t
+
+from ingot_grpcio import GrpcProject
+from ingot_grpcio.logging import GrpcLogging
+from ingot_grpcio.settings import GrpcSettings
+from ingot_grpcio.settings.configs import GrpcConfigs
+from ingots.puer import Slot
+
+from .grpc import AppGrpc
+from .say import Say
 
 
-class AppProject(ingot_grpcio.GrpcProject):
+class AppConfigs(GrpcConfigs):
+    pass
+
+
+class AppSettings(GrpcSettings):
+    configs = Slot(AppConfigs)
+
+
+class AppLogging(GrpcLogging):
+    project: "AppProject"
+
+
+class AppProject(GrpcProject):
     env_configs_prefix = "APP"
+    settings = Slot(AppSettings)
+    logging = Slot(AppLogging)
+    grpc = Slot(AppGrpc)
+    say = Slot(Say)
 ```
 
-An application with other addons joins the configs, the settings and the
-logging instead: `class AppConfigs(HttpConfigs, GrpcConfigs)` with `GrpcConfigs`
-from `ingot_grpcio.settings.configs`, and so on, as the addon guide of Ingots
-shows. The configs of the addon are named
-`GRPC_*`: `GRPC_LOGGING_LEVEL` sets the level of its logger, `ingot_grpcio`.
+With other addons, their classes join the same bases:
+`class AppConfigs(HttpConfigs, GrpcConfigs)`, and so on, as the
+[addon guide](https://github.com/ak-ingots/ingots/blob/main/docs/defaults/addon.md)
+of Ingots shows.
 
-## Servers
+The application runs through its own `__main__.py`:
+
+```python
+# app/__main__.py
+import sys
+
+from ingots.defaults.logging import configure_startup_logging
+from ingots.puer.cli import CommandRunner
+
+from .project import AppProject
+
+configure_startup_logging()
+sys.exit(CommandRunner(AppProject).run())
+```
+
+```sh
+uv run python -m app settings list    # the configs, GRPC_* among them
+uv run python -m app components list  # grpc.servers.default and grpc.clients.default among them
+```
+
+### Serve
 
 `GrpcProject` holds `grpc`, a unit of three: `grpc.errors`, how the
 exceptions reach a client; `grpc.servers` and `grpc.clients`, the servers
@@ -62,21 +121,19 @@ uv add --dev grpcio-tools
 uv run python -m grpc_tools.protoc -I . --python_out=. --grpc_python_out=. app/proto/demo.proto
 ```
 
-The application:
+The servicer, the binding, the server and its client:
 
 ```python
-# app/project.py
+# app/grpc.py
 import typing as t
 
-from ingot_grpcio import GrpcProject
 from ingot_grpcio.grpc import GrpcUnit
 from ingot_grpcio.grpc.clients import DefaultGrpcClient, GrpcClients
 from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
 from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
 from ingots.puer import Slot
-from ingots.puer.cli import BaseCommand
 
-from .proto import demo_pb2, demo_pb2_grpc
+from .proto import demo_pb2_grpc
 
 
 class Echo(GrpcServicer, demo_pb2_grpc.EchoServicer):
@@ -108,40 +165,9 @@ class AppGrpcClients(GrpcClients):
 class AppGrpc(GrpcUnit):
     servers = Slot(AppGrpcServers)
     clients = Slot(AppGrpcClients)
-
-
-class Say(BaseCommand):
-    cli_description = "Says ingots to the server."
-    project: "AppProject"
-
-    @t.override
-    async def _run(self) -> None:
-        client = await self.project.grpc.clients.default
-        reply = await client.echo.Say(demo_pb2.EchoMessage(text="ingots"))
-        print(reply.text)
-
-
-class AppProject(GrpcProject):
-    env_configs_prefix = "APP"
-    grpc = Slot(AppGrpc)
-    say = Slot(Say)
 ```
 
-It runs through its own `__main__.py`, which hands `AppProject` to
-`CommandRunner`:
-
-```python
-# app/__main__.py
-import sys
-
-from ingots.defaults.logging import configure_startup_logging
-from ingots.puer.cli import CommandRunner
-
-from .project import AppProject
-
-configure_startup_logging()
-sys.exit(CommandRunner(AppProject).run())
-```
+The server runs as any server of the project:
 
 ```sh
 uv run python -m app components run-forever --component grpc.servers.default
@@ -159,14 +185,9 @@ server may extend several. A subclass replacing a service keeps its
 contract and refines its servicer, as a slot does: `echo =
 GrpcService(demo_pb2_grpc.EchoStub, LoudEcho)` with `LoudEcho(Echo)`.
 
-The default server is configured
-by `GRPC_DEFAULT_LISTEN_HOST` (`[::]`), `GRPC_DEFAULT_PORT` (50051),
-`GRPC_DEFAULT_MAX_CONCURRENT_RPCS` (100, 0 for no limit),
-`GRPC_DEFAULT_SHUTDOWN_GRACE` (30 seconds for the calls in progress),
-`GRPC_DEFAULT_IS_SEND_DEBUG_INFO` (off, see below) and
-`GRPC_DEFAULT_IS_REFLECTION` (off, see below). Another server in the
-same process extends `BaseGrpcServer` with configs and bindings of its
-own.
+The default server takes `GRPC_DEFAULT_*`, see [Configs](#configs).
+Another server in the same process extends `BaseGrpcServer` with configs
+and bindings of its own.
 
 The interceptors of a server, the middleware of gRPC, come from its hook
 `_iter_interceptors()`, the outermost first. The default server yields
@@ -184,25 +205,50 @@ class AppGrpcServer(AppGrpcBinding, DefaultGrpcServer):
 Reflection, the service of gRPC describing a server, lets visual clients
 such as grpcurl, grpcui or Postman find its RPCs and messages without the
 `.proto` files. `GRPC_DEFAULT_IS_REFLECTION` turns it on, with the extra
-`reflection` (`uv add "ingot-grpcio[reflection]"`): the server describes
-exactly what it serves, as `grpc export` writes it. It is off by default,
-as it tells the API to anyone who can call the server: a development
-build turns it on, `APP_GRPC_DEFAULT_IS_REFLECTION=on`.
+`reflection`: the server describes exactly what it serves, as
+`grpc export` writes it. It is off by default, as it tells the API to
+anyone who can call the server: a development build turns it on,
+`APP_GRPC_DEFAULT_IS_REFLECTION=on`.
 
 A server is created in its hook `_create_server()` and prepared in
 `_prepare_server()`: its services added, its port bound, the reflection
 added when it is on. Another addition goes there, after `super()`.
 
-## Clients
+### Call
 
 A client is a component too: `grpc.clients.default` calls the default
-server, the command `say` above for one, while the server runs:
+server. The command `say`:
+
+```python
+# app/say.py
+import typing as t
+
+from ingots.puer.cli import BaseCommand
+
+from .proto import demo_pb2
+
+if t.TYPE_CHECKING:
+    from .project import AppProject
+
+
+class Say(BaseCommand):
+    cli_description = "Says ingots to the server."
+    project: "AppProject"
+
+    @t.override
+    async def _run(self) -> None:
+        client = await self.project.grpc.clients.default
+        reply = await client.echo.Say(demo_pb2.EchoMessage(text="ingots"))
+        print(reply.text)
+```
+
+It calls the server while the server runs:
 
 ```sh
 uv run python -m app say
 ```
 
-It calls `GRPC_DEFAULT_HOST` (`localhost`) on `GRPC_DEFAULT_PORT`, the
+The default client calls `GRPC_DEFAULT_HOST` on `GRPC_DEFAULT_PORT`, the
 port the server listens on, and the services of the bindings it extends,
 those of its server. Awaited, the client opens its channel and creates a
 stub for each service, once: `client.echo`, typed by mypy-protobuf as the
@@ -221,7 +267,7 @@ outermost first; the default client yields `ClientGrpcErrorsInterceptor`.
 grpcio takes an interceptor of several kinds of RPCs for the first of
 them only, so a client splits one into a part for each.
 
-## Export
+### Export
 
 Client SDKs, in any language, are generated from the services a server
 serves: `grpc export` writes them to a `FileDescriptorSet`, complete with
@@ -242,7 +288,7 @@ mkdir sdk
 uv run python -m grpc_tools.protoc --descriptor_set_in=demo.binpb --python_out=sdk --grpc_python_out=sdk app/proto/demo.proto
 ```
 
-## Errors
+### Handle the errors
 
 The RPCs raise the exceptions of the business logic and see no protobuf. A
 policy in `grpc.errors` tells how the server answers an exception of its
@@ -303,8 +349,22 @@ client, which logs it at `DEBUG`. A subclass in
 `server_handler = Slot(...)` or `client_handler = Slot(...)` changes how,
 its logging for one (`_log()`).
 
-**Status:** pre-alpha: the servers, the clients, the errors and the
-export of the services.
+### Configs
+
+Set as environment variables with the prefix of the project
+(`APP_GRPC_DEFAULT_PORT`), in a `--configs-file` or with `--config`.
+`GRPC_DEFAULT_*` configure the default server and its client.
+
+| Name | Default | Meaning |
+|---|---|---|
+| `GRPC_LOGGING_LEVEL` | `INFO` | the level of the logger of the addon, `ingot_grpcio` |
+| `GRPC_DEFAULT_LISTEN_HOST` | `[::]` | the host the server listens on; `[::]` for every interface |
+| `GRPC_DEFAULT_PORT` | `50051` | the port the server listens on and the client calls |
+| `GRPC_DEFAULT_MAX_CONCURRENT_RPCS` | `100` | the calls the server serves at once, the others refused; 0 for no limit |
+| `GRPC_DEFAULT_SHUTDOWN_GRACE` | `30.0` | the seconds the calls in progress get to finish at the shutdown |
+| `GRPC_DEFAULT_IS_SEND_DEBUG_INFO` | `False` | whether the server sends the traceback of an unexpected error to the client; for development |
+| `GRPC_DEFAULT_IS_REFLECTION` | `False` | whether the server describes its services by reflection, with the extra `reflection`; for development |
+| `GRPC_DEFAULT_HOST` | `localhost` | the host the client calls |
 
 ## Development
 
@@ -324,7 +384,3 @@ make all             # build the sdist and the wheel into dist/
   collating the changelog (`make cl-build VERSION=X.Y.Z`), then the tag
   `vX.Y.Z` on `main`: the `release` workflow publishes the tested build to
   TestPyPI, then to PyPI. Run by hand, it rehearses on TestPyPI only.
-
-## License
-
-[Apache 2.0](https://github.com/ak-ingots/ingot-grpcio/blob/main/LICENSE).
