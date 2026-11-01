@@ -366,6 +366,36 @@ Set as environment variables with the prefix of the project
 | `GRPC_DEFAULT_IS_REFLECTION` | `False` | whether the server describes its services by reflection, with the extra `reflection`; for development |
 | `GRPC_DEFAULT_HOST` | `localhost` | the host the client calls |
 
+## For Authors of Addons
+
+An addon shipping a contract keeps it in the contrib of its transport, and
+names its files for its consumers, not by where it holds them
+([ADR 0009](https://github.com/ak-ingots/ingots-libs/blob/main/docs/adr/0009-name-grpc-contracts-apart-from-the-layout.md)).
+An application needs none of this.
+
+A file is `ingot_<name>/v<N>/<service>.proto` under `proto/` of the contrib, with
+one service and its messages, in the package `ingot_<name>.<service>.v<N>`:
+
+```
+ingot_shop/contrib/transports/grpcio/proto/ingot_shop/v1/orders.proto
+```
+
+The name is the path an SDK gets, while `protoc` imports the generated code by
+it too. So generate from `proto/`, then make the imports relative:
+
+```make
+PROTO := ingot_shop/contrib/transports/grpcio/proto
+proto:
+	uv run python -m grpc_tools.protoc -I $(PROTO) --python_out=$(PROTO) \
+		--grpc_python_out=$(PROTO) --mypy_out=$(PROTO) --mypy_grpc_out=$(PROTO) \
+		$(PROTO)/ingot_shop/v1/*.proto
+	sed -i 's/^from ingot_shop\.v1 import /from . import /' \
+		$(PROTO)/ingot_shop/v1/*_pb2*.py $(PROTO)/ingot_shop/v1/*_pb2*.pyi
+```
+
+An addon forgetting the last step fails on import, in `make wheel-test` at the
+latest. An SDK generated from the export needs nothing of the kind.
+
 ## Development
 
 Requires [uv](https://docs.astral.sh/uv/) and `make`; uv fetches the
