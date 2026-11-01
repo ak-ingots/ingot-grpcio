@@ -9,7 +9,8 @@ name: release
 #   X.Y.Z.devN, N the run number, to TestPyPI only.
 #
 # What is published is the build that `make wheel-test` tested; PyPI takes
-# it once `make index-test` has installed and tested it as TestPyPI gives it.
+# it once the workflow `index-test` of the meta repository has installed and
+# tested it as TestPyPI gives it.
 
 on:
   push:
@@ -77,19 +78,12 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
 
-  # The package as TestPyPI gives it, the dependencies from PyPI: the same
-  # file as the build, installed and tested on every supported interpreter.
   testpypi-check:
     needs: [build, testpypi]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags since v8
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-      - run: make index-test VERSION=${{ needs.build.outputs.version }}
+    uses: ak-ingots/ingots-libs/.github/workflows/index-test.yml@main
+    with:
+      package: ingot-grpcio
+      version: ${{ needs.build.outputs.version }}
 
   pypi:
     needs: testpypi-check
