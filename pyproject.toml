@@ -24,7 +24,7 @@ dependencies = [
     "googleapis-common-protos>=1.70,<2",
     "grpcio>=1.84,<2",
     "grpcio-status>=1.84,<2",
-    "ingots>=0.31.0,<0.32",
+    "ingots>=0.32.2,<0.33",
     "protobuf>=6.31,<8",
 ]
 
