@@ -64,11 +64,11 @@ index-test:  ## unittest on the wheel of VERSION as INDEX gives it (VERSION=X.Y.
 	@test -n "$(VERSION)" || { echo "VERSION=X.Y.Z is required"; exit 1; }
 	@tmp=$$(mktemp -d); \
 		trap 'rm -rf "$$tmp"' EXIT; \
-		for attempt in $$(seq 30); do \
+		for attempt in $$(seq 50); do \
 			uvx --quiet --python $(firstword $(PYTHONS)) pip download --quiet --no-deps --only-binary :all: \
 				--index-url $(INDEX) --dest "$$tmp" "ingot-grpcio==$(VERSION)" \
 				&& break; \
-			[ $$attempt -lt 30 ] || exit 1; \
+			[ $$attempt -lt 50 ] || exit 1; \
 			echo "== waiting for ingot-grpcio $(VERSION) on $(INDEX)"; \
 			sleep 10; \
 		done; \
