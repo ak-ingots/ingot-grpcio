@@ -9,7 +9,7 @@ Integration of grpcio, the gRPC library of Google, into Ingots applications:
 gRPC servers and clients on its asynchronous API. An addon of
 [Ingots](https://github.com/ak-ingots/ingots).
 
-**Status:** pre-alpha, on ingots 0.32: the servers, the clients, the errors
+**Status:** pre-alpha: the servers, the clients, the errors
 and the export of the services.
 
 ## For Consumers

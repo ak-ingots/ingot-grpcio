@@ -24,6 +24,3 @@ class CanaryTestCase(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("INGOT_GRPCIO_WHEEL_TEST"), "not a wheel test")
     def test_the_wheel_is_imported_not_the_working_tree(self) -> None:
         self.assertIn("site-packages", ingot_grpcio.__file__ or "")
-
-    def test_the_framework_is_installed(self) -> None:
-        self.assertTrue(importlib.metadata.version("ingots").startswith("0.32."))
