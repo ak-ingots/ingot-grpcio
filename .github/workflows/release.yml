@@ -11,6 +11,11 @@ name: release
 # What is published is the build that `make wheel-test` tested; PyPI takes
 # it once the workflow `index-test` of the meta repository has installed and
 # tested it as TestPyPI gives it.
+#
+# What depends on the package is checked too, by the reusable workflow of the
+# meta repository (ADR 0008): neither call holds a release back. A red
+# `dep-try` tells what the build breaks, before PyPI; a red `dep-behind` after
+# a release tells what is to be moved and released.
 
 on:
   push:
@@ -101,3 +106,17 @@ jobs:
           path: dist/
       # pinned by commit: this action holds the publishing identity
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # v1.14.3
+
+  dep-try:
+    needs: build
+    uses: ak-ingots/ingots-libs/.github/workflows/dependents.yml@main
+    with:
+      package: ingot-grpcio
+      target: dep-try
+
+  dep-behind:
+    needs: pypi
+    uses: ak-ingots/ingots-libs/.github/workflows/dependents.yml@main
+    with:
+      package: ingot-grpcio
+      target: dep-behind
