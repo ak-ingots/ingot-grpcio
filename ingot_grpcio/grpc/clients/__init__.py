@@ -4,7 +4,7 @@ __all__ = (
     "BaseGrpcClient",
     "ClientGrpcErrorsInterceptor",
     "DefaultGrpcClient",
-    "GrpcClients",
+    "GrpcClientsUnit",
 )
 
 from ingots.puer import Slot, Unit
@@ -14,7 +14,7 @@ from .default import DefaultGrpcClient
 from .interceptor import ClientGrpcErrorsInterceptor
 
 
-class GrpcClients(Unit):
+class GrpcClientsUnit(Unit):
     """
     The gRPC clients of the project: :attr:`default`, of the default
     server, for a start. A client of another server, of the project or

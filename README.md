@@ -27,19 +27,19 @@ The extra `reflection` lets a server describe its services
 
 An application of Ingots has its own configs, settings, logging and project;
 each takes the class of the addon among its bases. The project takes the
-gRPC of the application, `AppGrpc`, and its command `say`, both below:
+gRPC of the application, `AppGrpcUnit`, and its command `say`, both below:
 
 ```python
 # app/project.py
 import typing as t
 
 from ingot_grpcio import GrpcProject
-from ingot_grpcio.logging import GrpcLogging
-from ingot_grpcio.settings import GrpcSettings
+from ingot_grpcio.logging import GrpcLoggingUnit
+from ingot_grpcio.settings import GrpcSettingsUnit
 from ingot_grpcio.settings.configs import GrpcConfigs
 from ingots.puer import Slot
 
-from .grpc import AppGrpc
+from .grpc import AppGrpcUnit
 from .say import Say
 
 
@@ -47,19 +47,19 @@ class AppConfigs(GrpcConfigs):
     pass
 
 
-class AppSettings(GrpcSettings):
+class AppSettingsUnit(GrpcSettingsUnit):
     configs = Slot(AppConfigs)
 
 
-class AppLogging(GrpcLogging):
+class AppLoggingUnit(GrpcLoggingUnit):
     project: "AppProject"
 
 
 class AppProject(GrpcProject):
     env_configs_prefix = "APP"
-    settings = Slot(AppSettings)
-    logging = Slot(AppLogging)
-    grpc = Slot(AppGrpc)
+    settings = Slot(AppSettingsUnit)
+    logging = Slot(AppLoggingUnit)
+    grpc = Slot(AppGrpcUnit)
     say = Slot(Say)
 ```
 
@@ -128,8 +128,8 @@ The servicer, the binding, the server and its client:
 import typing as t
 
 from ingot_grpcio.grpc import GrpcUnit
-from ingot_grpcio.grpc.clients import DefaultGrpcClient, GrpcClients
-from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
+from ingot_grpcio.grpc.clients import DefaultGrpcClient, GrpcClientsUnit
+from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
 from ingots.puer import Slot
 
@@ -154,17 +154,17 @@ class AppGrpcClient(AppGrpcBinding, DefaultGrpcClient):
     pass
 
 
-class AppGrpcServers(GrpcServers):
+class AppGrpcServersUnit(GrpcServersUnit):
     default = Slot(AppGrpcServer)
 
 
-class AppGrpcClients(GrpcClients):
+class AppGrpcClientsUnit(GrpcClientsUnit):
     default = Slot(AppGrpcClient)
 
 
-class AppGrpc(GrpcUnit):
-    servers = Slot(AppGrpcServers)
-    clients = Slot(AppGrpcClients)
+class AppGrpcUnit(GrpcUnit):
+    servers = Slot(AppGrpcServersUnit)
+    clients = Slot(AppGrpcClientsUnit)
 ```
 
 The server runs as any server of the project:
@@ -301,7 +301,7 @@ as a `GrpcError`. A static policy declares its status in constants:
 
 ```python
 import grpc
-from ingot_grpcio.grpc.errors import BaseStaticGrpcErrorPolicy, GrpcErrors
+from ingot_grpcio.grpc.errors import BaseStaticGrpcErrorPolicy, GrpcErrorsUnit
 
 
 class InsufficientFundsPolicy(BaseStaticGrpcErrorPolicy):
@@ -315,11 +315,11 @@ class InsufficientFundsPolicy(BaseStaticGrpcErrorPolicy):
         return {"account": error.account}
 
 
-class AppGrpcErrors(GrpcErrors):
+class AppGrpcErrorsUnit(GrpcErrorsUnit):
     insufficient_funds = Slot(InsufficientFundsPolicy)
 ```
 
-`AppGrpc` declares `errors = Slot(AppGrpcErrors)`. An exception takes the
+`AppGrpcUnit` declares `errors = Slot(AppGrpcErrorsUnit)`. An exception takes the
 policy of its class or of its nearest base class with one. The server logs
 it at the `LOG_LEVEL` of the policy, `logging.INFO` by default, for an
 answer of the API, or `logging.WARNING` and up; `LOG_EXC_INFO = True` adds

@@ -25,7 +25,7 @@ class ServerGrpcErrorHandler(Entity):
     has one. A project changes how they are applied, its logging for one,
     in a subclass::
 
-        class AppGrpcErrors(GrpcErrors):
+        class AppGrpcErrorsUnit(GrpcErrorsUnit):
             server_handler = Slot(AppServerGrpcErrorHandler)
     """
 

@@ -13,7 +13,7 @@ from grpc import aio
 from ingot_grpcio import GrpcProject
 from ingot_grpcio.grpc import GrpcUnit
 from ingot_grpcio.grpc.clients import DefaultGrpcClient
-from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
+from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
 from ingots.puer import Slot
 from ingots.puer.cli import CommandRunner
@@ -67,12 +67,12 @@ class TstGrpcServer(TstGrpcBinding, DefaultGrpcServer):
     pass
 
 
-class TstGrpcServers(GrpcServers):
+class TstGrpcServersUnit(GrpcServersUnit):
     default = Slot(TstGrpcServer)
 
 
 class TstGrpcUnit(GrpcUnit):
-    servers = Slot(TstGrpcServers)
+    servers = Slot(TstGrpcServersUnit)
 
 
 class TstProject(GrpcProject):
@@ -80,14 +80,14 @@ class TstProject(GrpcProject):
 
 
 def make_project(server_cls: type[DefaultGrpcServer]) -> type[GrpcProject]:
-    class Servers(GrpcServers):
+    class ServersUnit(GrpcServersUnit):
         default = Slot(server_cls)
 
-    class Unit(GrpcUnit):
-        servers = Slot(Servers)
+    class LocalGrpcUnit(GrpcUnit):
+        servers = Slot(ServersUnit)
 
     class Project(GrpcProject):
-        grpc = Slot(Unit)
+        grpc = Slot(LocalGrpcUnit)
 
     return Project
 
