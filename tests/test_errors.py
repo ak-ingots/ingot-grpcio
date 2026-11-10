@@ -18,10 +18,10 @@ from ingot_grpcio.grpc.errors import (
     BaseGrpcErrorPolicy,
     BaseStaticGrpcErrorPolicy,
     GrpcError,
-    GrpcErrors,
+    GrpcErrorsUnit,
     InternalGrpcErrorPolicy,
 )
-from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
+from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
 from ingots.puer import Slot
 
@@ -133,18 +133,18 @@ class FailingGrpcServer(FailingGrpcBinding, DefaultGrpcServer):
     pass
 
 
-class TstGrpcServers(GrpcServers):
+class TstGrpcServersUnit(GrpcServersUnit):
     default = Slot(FailingGrpcServer)
 
 
-class TstGrpcErrors(GrpcErrors):
+class TstGrpcErrorsUnit(GrpcErrorsUnit):
     shop = Slot(ShopErrorPolicy)
     insufficient_funds = Slot(InsufficientFundsPolicy)
 
 
 class TstGrpcUnit(GrpcUnit):
-    errors = Slot(TstGrpcErrors)
-    servers = Slot(TstGrpcServers)
+    errors = Slot(TstGrpcErrorsUnit)
+    servers = Slot(TstGrpcServersUnit)
 
 
 class TstProject(GrpcProject):
@@ -353,12 +353,12 @@ class RecordingGrpcServer(FailingGrpcServer):
         yield RECORDING
 
 
-class RecordingGrpcServers(TstGrpcServers):
+class RecordingGrpcServersUnit(TstGrpcServersUnit):
     default = Slot(RecordingGrpcServer)
 
 
 class RecordingGrpcUnit(TstGrpcUnit):
-    servers = Slot(RecordingGrpcServers)
+    servers = Slot(RecordingGrpcServersUnit)
 
 
 class RecordingProject(TstProject):
@@ -396,12 +396,12 @@ class StockPolicy(BaseGrpcErrorPolicy):
         return status
 
 
-class StockGrpcErrors(GrpcErrors):
+class StockGrpcErrorsUnit(GrpcErrorsUnit):
     stock = Slot(StockPolicy)
 
 
 class StockGrpcUnit(GrpcUnit):
-    errors = Slot(StockGrpcErrors)
+    errors = Slot(StockGrpcErrorsUnit)
 
 
 class StockProject(GrpcProject):
@@ -444,11 +444,11 @@ class RegistryTestCase(unittest.TestCase):
                     LOG_LEVEL = level
                     LOG_EXC_INFO = is_exc_info
 
-                class LevelGrpcErrors(GrpcErrors):
+                class LevelGrpcErrorsUnit(GrpcErrorsUnit):
                     shop = Slot(LevelPolicy)
 
                 class LevelGrpcUnit(GrpcUnit):
-                    errors = Slot(LevelGrpcErrors)
+                    errors = Slot(LevelGrpcErrorsUnit)
 
                 class LevelProject(GrpcProject):
                     grpc = Slot(LevelGrpcUnit)
@@ -500,10 +500,10 @@ class RegistryTestCase(unittest.TestCase):
             pass
 
         with self.assertRaisesRegex(
-            TypeError, r"Bad.app: .*AppPolicy declares no EXCEPTION$"
+            TypeError, r"BadErrorsUnit.app: .*AppPolicy declares no EXCEPTION$"
         ):
 
-            class Bad(GrpcErrors):
+            class BadErrorsUnit(GrpcErrorsUnit):
                 app = Slot(AppPolicy)
 
     def test_an_exception_has_one_policy(self) -> None:
@@ -511,10 +511,10 @@ class RegistryTestCase(unittest.TestCase):
             REASON = "OTHER"
 
         with self.assertRaisesRegex(
-            TypeError, r"Bad: ShopError has both shop and other$"
+            TypeError, r"BadErrorsUnit: ShopError has both shop and other$"
         ):
 
-            class Bad(GrpcErrors):
+            class BadErrorsUnit(GrpcErrorsUnit):
                 shop = Slot(ShopErrorPolicy)
                 other = Slot(OtherShopErrorPolicy)
 
@@ -523,9 +523,9 @@ class RegistryTestCase(unittest.TestCase):
             EXCEPTION = OutOfStock
 
         with self.assertRaisesRegex(
-            TypeError, r"Bad: shop.example.com/SHOP has both shop and stock$"
+            TypeError, r"BadErrorsUnit: shop.example.com/SHOP has both shop and stock$"
         ):
 
-            class Bad(GrpcErrors):
+            class BadErrorsUnit(GrpcErrorsUnit):
                 shop = Slot(ShopErrorPolicy)
                 stock = Slot(OutOfStockPolicy)

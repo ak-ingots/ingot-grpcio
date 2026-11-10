@@ -14,7 +14,7 @@ from google.protobuf import descriptor_pb2
 
 from ingot_grpcio import GrpcProject
 from ingot_grpcio.grpc import GrpcUnit
-from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
+from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService, build_descriptor_set
 from ingot_grpcio.grpc.services.export import iter_with_imports
 from ingots.puer import Slot
@@ -35,13 +35,13 @@ class PingGrpcServer(DefaultGrpcServer):
     ping = GrpcService(tst_pb2_grpc.PingStub, Ping)
 
 
-class TstGrpcServers(GrpcServers):
+class TstGrpcServersUnit(GrpcServersUnit):
     default = Slot(EchoGrpcServer)
     ping = Slot(PingGrpcServer)
 
 
 class TstGrpcUnit(GrpcUnit):
-    servers = Slot(TstGrpcServers)
+    servers = Slot(TstGrpcServersUnit)
 
 
 class TstProject(GrpcProject):

@@ -6,9 +6,9 @@ repeat what README or the ADRs say: link to them.
 ## What this is
 
 `ingot-grpcio`: an addon of [Ingots](https://github.com/ak-ingots/ingots) for
-grpcio. `GrpcProject` (`project.py`) takes the addon's `GrpcSettings`
+grpcio. `GrpcProject` (`project.py`) takes the addon's `GrpcSettingsUnit`
 (`settings/`) with its `GrpcConfigs` (`settings/configs.py`, named `GRPC_*`)
-and its `GrpcLogging` (`logging/`, the logger `ingot_grpcio`); a unit lives in
+and its `GrpcLoggingUnit` (`logging/`, the logger `ingot_grpcio`); a unit lives in
 the `__init__.py` of its package, as in `ingots.defaults`, and a class takes
 the prefix `Grpc`, so that an application imports it under its own name.
 `grpc/` is the gRPC unit: `services/` the services (`GrpcService`, a
@@ -24,7 +24,7 @@ when it is on; `make wheel-test` installs the extras of `EXTRAS`),
 (`BaseGrpcErrorPolicy`, a strategy, tells how a server encodes an exception of
 the business logic into a `status_pb2.Status` and logs it;
 `BaseStaticGrpcErrorPolicy` declares it in constants; `InternalGrpcErrorPolicy`
-takes the rest; `GrpcErrors` holds them, its `ServerGrpcErrorHandler` applies
+takes the rest; `GrpcErrorsUnit` holds them, its `ServerGrpcErrorHandler` applies
 them and its `ClientGrpcErrorHandler` decodes a failed call into a
 `GrpcError`), `clients/` the clients (`BaseGrpcClient`, a component giving
 the stubs of its services; `DefaultGrpcClient` calls the default server).

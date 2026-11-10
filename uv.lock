@@ -332,7 +332,7 @@ requires-dist = [
     { name = "grpcio", specifier = ">=1.84,<2" },
     { name = "grpcio-reflection", marker = "extra == 'reflection'", specifier = ">=1.84,<2" },
     { name = "grpcio-status", specifier = ">=1.84,<2" },
-    { name = "ingots", specifier = ">=0.32.2,<0.33" },
+    { name = "ingots", specifier = ">=0.33.0,<0.34" },
     { name = "protobuf", specifier = ">=6.31,<8" },
 ]
 provides-extras = ["reflection"]
@@ -356,11 +356,11 @@ dev = [
 
 [[package]]
 name = "ingots"
-version = "0.32.2"
+version = "0.33.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e6/8b/05b31af6dab16230c0bb1ff2fb2931d18279ca226dd3a67801ceef5bc6b6/ingots-0.32.2.tar.gz", hash = "sha256:41e2a9d1d30c92ecf2a641009331b4948250d2cde1c99591dac1195d6b89b6cb", size = 39397, upload-time = "2026-10-28T13:55:09.255Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/84/21/3ddfbb8b025a5729766fa9dd21e11ab0684f3666df261eb2fb6fb6fdec62/ingots-0.33.0.tar.gz", hash = "sha256:fb857d7ea8d67418934da206f4960564e9a0fdd65749232e4eba1bd9cf6cc584", size = 40354, upload-time = "2026-11-09T20:38:04.88Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/cb/8552c1c95e7a4cec985224ead2bffca84b73689688acc49ceacd31c8e51f/ingots-0.32.2-py3-none-any.whl", hash = "sha256:19a934bc5c354f037c7dbc607ec0ad3a77c94962878555eee3b9439e8af2d458", size = 58095, upload-time = "2026-10-28T13:55:08.067Z" },
+    { url = "https://files.pythonhosted.org/packages/56/59/78ae41c7930e826ca6daee7685a6e4e0c05dda9869bcc7dd29096b6518a3/ingots-0.33.0-py3-none-any.whl", hash = "sha256:e02d7cfbc2c9e8b5bb950b70015954d0bd5b6636d710e93d7aae50dda31e3db8", size = 59863, upload-time = "2026-11-09T20:38:03.434Z" },
 ]
 
 [[package]]

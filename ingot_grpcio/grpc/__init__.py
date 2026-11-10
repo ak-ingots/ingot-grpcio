@@ -5,10 +5,10 @@ __all__ = ("GrpcUnit",)
 from ingots.puer import Slot
 from ingots.puer.cli import CliUnit
 
-from .clients import GrpcClients
+from .clients import GrpcClientsUnit
 from .commands import ExportGrpcCommand
-from .errors import GrpcErrors
-from .servers import GrpcServers
+from .errors import GrpcErrorsUnit
+from .servers import GrpcServersUnit
 
 
 class GrpcUnit(CliUnit):
@@ -20,7 +20,7 @@ class GrpcUnit(CliUnit):
     (:class:`~ingot_grpcio.grpc.services.GrpcService`); an application
     declares its own in subclasses of the units::
 
-        class AppGrpcServers(GrpcServers):
+        class AppGrpcServersUnit(GrpcServersUnit):
             default = Slot(AppGrpcServer)
 
     On the command line, ``grpc export`` writes the services of the
@@ -29,7 +29,7 @@ class GrpcUnit(CliUnit):
 
     cli_description = "gRPC: the export of the services."
 
-    errors = Slot(GrpcErrors)
-    servers = Slot(GrpcServers)
-    clients = Slot(GrpcClients)
+    errors = Slot(GrpcErrorsUnit)
+    servers = Slot(GrpcServersUnit)
+    clients = Slot(GrpcClientsUnit)
     export = Slot(ExportGrpcCommand)

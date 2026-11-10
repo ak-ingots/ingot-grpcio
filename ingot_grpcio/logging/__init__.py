@@ -1,16 +1,16 @@
 """The logging unit of the defaults with the logger of the addon."""
 
-__all__ = ("GrpcLogging",)
+__all__ = ("GrpcLoggingUnit",)
 
 import typing as t
 
-from ingots.defaults.logging import Logging
+from ingots.defaults.logging import LoggingUnit
 
 if t.TYPE_CHECKING:
     from ..project import GrpcProject
 
 
-class GrpcLogging(Logging):
+class GrpcLoggingUnit(LoggingUnit):
     """
     The logging unit, with the logger of the addon, ``ingot_grpcio``, at
     ``GRPC_LOGGING_LEVEL``.

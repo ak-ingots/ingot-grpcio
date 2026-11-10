@@ -12,7 +12,7 @@ from grpc_reflection.v1alpha import reflection_pb2, reflection_pb2_grpc
 
 from ingot_grpcio import GrpcProject
 from ingot_grpcio.grpc import GrpcUnit
-from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
+from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService
 from ingots.puer import Slot
 
@@ -27,12 +27,12 @@ class EchoGrpcServer(DefaultGrpcServer):
     echo = GrpcService(tst_pb2_grpc.EchoStub, Echo)
 
 
-class TstGrpcServers(GrpcServers):
+class TstGrpcServersUnit(GrpcServersUnit):
     default = Slot(EchoGrpcServer)
 
 
 class TstGrpcUnit(GrpcUnit):
-    servers = Slot(TstGrpcServers)
+    servers = Slot(TstGrpcServersUnit)
 
 
 class TstProject(GrpcProject):

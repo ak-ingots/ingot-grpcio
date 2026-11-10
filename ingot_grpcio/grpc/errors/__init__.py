@@ -5,7 +5,7 @@ __all__ = (
     "BaseStaticGrpcErrorPolicy",
     "ClientGrpcErrorHandler",
     "GrpcError",
-    "GrpcErrors",
+    "GrpcErrorsUnit",
     "InternalGrpcErrorPolicy",
     "ServerGrpcErrorHandler",
 )
@@ -22,7 +22,7 @@ from .server_handler import ServerGrpcErrorHandler
 from .static import BaseStaticGrpcErrorPolicy
 
 
-class GrpcErrors(Unit):
+class GrpcErrorsUnit(Unit):
     """
     The policies of the project, each in a slot of its own, and their
     handlers: :attr:`server_handler` finds them by the class of an
@@ -30,7 +30,7 @@ class GrpcErrors(Unit):
     :class:`GrpcError`. :attr:`internal` takes every exception no other
     policy takes::
 
-        class AppGrpcErrors(GrpcErrors):
+        class AppGrpcErrorsUnit(GrpcErrorsUnit):
             insufficient_funds = Slot(InsufficientFundsPolicy)
 
     An exception class has one policy, and so has a domain and reason.
@@ -49,7 +49,7 @@ class GrpcErrors(Unit):
         index_policies(cls)
 
 
-def index_policies(cls: type[GrpcErrors]) -> None:
+def index_policies(cls: type[GrpcErrorsUnit]) -> None:
     """
     Internal, run when the class is created: every policy declares its
     exception, and none shares an exception, or a static one a domain and
@@ -81,4 +81,4 @@ def index_policies(cls: type[GrpcErrors]) -> None:
     cls._policies_by_exception = by_exception
 
 
-index_policies(GrpcErrors)  # __init_subclass__ runs for the subclasses only
+index_policies(GrpcErrorsUnit)  # __init_subclass__ runs for the subclasses only

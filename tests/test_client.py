@@ -10,9 +10,9 @@ from grpc import aio
 
 from ingot_grpcio import GrpcProject
 from ingot_grpcio.grpc import GrpcUnit
-from ingot_grpcio.grpc.clients import DefaultGrpcClient, GrpcClients
-from ingot_grpcio.grpc.errors import GrpcError, GrpcErrors
-from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServers
+from ingot_grpcio.grpc.clients import DefaultGrpcClient, GrpcClientsUnit
+from ingot_grpcio.grpc.errors import GrpcError, GrpcErrorsUnit
+from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
 from ingots.puer import Slot
 
@@ -69,22 +69,22 @@ class TstGrpcClient(TstGrpcBinding, DefaultGrpcClient):
     ping = GrpcService(tst_pb2_grpc.PingStub)
 
 
-class TstGrpcErrors(GrpcErrors):
+class TstGrpcErrorsUnit(GrpcErrorsUnit):
     insufficient_funds = Slot(InsufficientFundsPolicy)
 
 
-class TstGrpcServers(GrpcServers):
+class TstGrpcServersUnit(GrpcServersUnit):
     default = Slot(TstGrpcServer)
 
 
-class TstGrpcClients(GrpcClients):
+class TstGrpcClientsUnit(GrpcClientsUnit):
     default = Slot(TstGrpcClient)
 
 
 class TstGrpcUnit(GrpcUnit):
-    errors = Slot(TstGrpcErrors)
-    servers = Slot(TstGrpcServers)
-    clients = Slot(TstGrpcClients)
+    errors = Slot(TstGrpcErrorsUnit)
+    servers = Slot(TstGrpcServersUnit)
+    clients = Slot(TstGrpcClientsUnit)
 
 
 class TstProject(GrpcProject):
@@ -120,12 +120,12 @@ class RecordingGrpcClient(TstGrpcClient):
         yield RECORDING
 
 
-class RecordingGrpcClients(TstGrpcClients):
+class RecordingGrpcClientsUnit(TstGrpcClientsUnit):
     default = Slot(RecordingGrpcClient)
 
 
 class RecordingGrpcUnit(TstGrpcUnit):
-    clients = Slot(RecordingGrpcClients)
+    clients = Slot(RecordingGrpcClientsUnit)
 
 
 class RecordingProject(TstProject):

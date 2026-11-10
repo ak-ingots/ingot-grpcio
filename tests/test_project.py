@@ -7,8 +7,8 @@ from unittest import mock
 
 import ingot_grpcio
 from ingot_grpcio.__main__ import main
-from ingot_grpcio.logging import GrpcLogging
-from ingot_grpcio.settings import GrpcSettings
+from ingot_grpcio.logging import GrpcLoggingUnit
+from ingot_grpcio.settings import GrpcSettingsUnit
 from ingot_grpcio.settings.configs import GrpcConfigs
 from ingots.defaults import Project
 from ingots.puer.cli import CommandRunner
@@ -31,9 +31,9 @@ class ProjectTestCase(unittest.TestCase):
 
     def test_the_project_extends_the_defaults(self) -> None:
         self.assertTrue(issubclass(ingot_grpcio.GrpcProject, Project))
-        self.assertIs(ingot_grpcio.GrpcProject.settings.cls, GrpcSettings)
-        self.assertIs(ingot_grpcio.GrpcProject.logging.cls, GrpcLogging)
-        self.assertIs(GrpcSettings.configs.cls, GrpcConfigs)
+        self.assertIs(ingot_grpcio.GrpcProject.settings.cls, GrpcSettingsUnit)
+        self.assertIs(ingot_grpcio.GrpcProject.logging.cls, GrpcLoggingUnit)
+        self.assertIs(GrpcSettingsUnit.configs.cls, GrpcConfigs)
 
     def test_the_configs_of_the_addon_are_read(self) -> None:
         os.environ["INGOT_GRPC_LOGGING_LEVEL"] = "debug"

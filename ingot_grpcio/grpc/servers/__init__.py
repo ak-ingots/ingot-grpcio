@@ -3,7 +3,7 @@
 __all__ = (
     "BaseGrpcServer",
     "DefaultGrpcServer",
-    "GrpcServers",
+    "GrpcServersUnit",
     "ServerGrpcErrorsInterceptor",
 )
 
@@ -14,7 +14,7 @@ from .default import DefaultGrpcServer
 from .interceptor import ServerGrpcErrorsInterceptor
 
 
-class GrpcServers(Unit):
+class GrpcServersUnit(Unit):
     """
     The gRPC servers of the project: :attr:`default` for a start. An
     application with more servers in one process adds them in a subclass,

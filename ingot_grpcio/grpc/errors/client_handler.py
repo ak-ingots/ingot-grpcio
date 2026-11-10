@@ -23,7 +23,7 @@ class ClientGrpcErrorHandler(Entity):
     stay on the server. A project changes how, its logging for one, in a
     subclass::
 
-        class AppGrpcErrors(GrpcErrors):
+        class AppGrpcErrorsUnit(GrpcErrorsUnit):
             client_handler = Slot(AppClientGrpcErrorHandler)
     """
 
