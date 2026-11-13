@@ -185,6 +185,27 @@ server may extend several. A subclass replacing a service keeps its
 contract and refines its servicer, as a slot does: `echo =
 GrpcService(demo_pb2_grpc.EchoStub, LoudEcho)` with `LoudEcho(Echo)`.
 
+An RPC runs an operation of the project by `run_operation()`, for the
+caller of the call, which the servicer tells by its hook `_get_caller()`,
+the anonymous one of the project in `GrpcServicer`,
+`operations.callers.get_anonymous()`, with what the application gives
+anyone: how a call tells its caller, a token, a certificate, is of the
+application or of an addon, which overrides the hook:
+
+```python
+class Orders(GrpcServicer, orders_pb2_grpc.OrdersServicer):
+    @t.override
+    async def CreateOrder(self, request, context):
+        order = await self.run_operation(
+            self.project.orders.op_create, OrderToCreate(item=request.item), context
+        )
+        return orders_pb2.CreateOrderResponse(id=order.id)
+
+    @t.override
+    async def _get_caller(self, context):
+        return await self.project.users.get_caller(context.invocation_metadata())
+```
+
 The default server takes `GRPC_DEFAULT_*`, see [Configs](#configs).
 Another server in the same process extends `BaseGrpcServer` with configs
 and bindings of its own.

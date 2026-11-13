@@ -13,7 +13,9 @@ the `__init__.py` of its package, as in `ingots.defaults`, and a class takes
 the prefix `Grpc`, so that an application imports it under its own name.
 `grpc/` is the gRPC unit: `services/` the services (`GrpcService`, a
 descriptor naming a service by its generated stub and its optional servicer, a
-`GrpcServicer` holding the RPCs; a binding is a plain class of them, and a
+`GrpcServicer` holding the RPCs, running an operation for the caller its
+hook `_get_caller` tells, the anonymous one of `operations.callers` here;
+a binding is a plain class of them, and a
 `GrpcServicesOwner` extending it gives each its servicer or stub),
 `servers/` the servers (`BaseGrpcServer`, a component with hooks for its
 configs; `DefaultGrpcServer` on `GRPC_DEFAULT_*`; the reflection, on by
