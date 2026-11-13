@@ -5,6 +5,18 @@ to 0.8.0 on TestPyPI are the previous implementation.
 
 <!-- towncrier release notes start -->
 
+## [0.12.1] - 2026-11-13
+### Added
+- A servicer runs an operation of the project for the caller of a call,
+  `GrpcServicer.run_operation(factory, parameters, context)`: the caller is
+  of its hook `_get_caller(context)`, the anonymous one of the project in
+  `GrpcServicer`, `operations.callers.get_anonymous()`, with what the
+  application gives anyone, which an application or an addon overrides with
+  how a call tells its caller.
+
+### Changed
+- Requires ingots 0.33.2 (`>=0.33.2,<0.34`), for the callers of its operations.
+
 ## [0.12.0] - 2026-11-10
 ### Changed
 - Moved on to ingots 0.33. The units of the addon that group others are named
