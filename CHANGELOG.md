@@ -5,6 +5,12 @@ to 0.8.0 on TestPyPI are the previous implementation.
 
 <!-- towncrier release notes start -->
 
+## [0.13.0] - 2026-11-14
+### Changed
+- Moved on to ingots 0.34. A servicer is an entity under the unit of its
+  server, named by the server and the service, `build_servicer(parent,
+  name)` of a service in place of `build_servicer(project)`.
+
 ## [0.12.1] - 2026-11-13
 ### Added
 - A servicer runs an operation of the project for the caller of a call,
