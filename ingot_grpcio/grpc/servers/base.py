@@ -89,7 +89,10 @@ class BaseGrpcServer(GrpcServicesOwner, Component):
         try:
             return servicers[service.name]
         except KeyError:
-            servicer: GrpcServicer = service.build_servicer(self.project)
+            # under the unit of the server, named by the server and the service
+            servicer: GrpcServicer = service.build_servicer(
+                self.parent, f"{self.name}.{service.name}"
+            )
             servicers[service.name] = servicer
             return servicer
 
