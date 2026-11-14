@@ -14,32 +14,44 @@ from ingots.defaults.operations import (
     CallersProvider,
     OperationMetadata,
     OperationsUnit,
+    OperationsOwner,
     PermissionFlags,
     Permissions,
+    PermissionsSlot,
 )
-from ingots.puer import Factory, Slot, Unit
+from ingots.puer import Factory, Slot, Unit, create_entity
 
 from .proto import tst_pb2_grpc
 from .proto.tst_pb2 import EchoReply, EchoRequest
 from .test_client import Context, Echo, find_free_port
 
 
-class Greetings(PermissionFlags, domain="greetings"):
-    CAN_GREET = 1 << 0
-
-
 class GreetOperation(BaseOperation[str, str]):
     """Greets the caller it runs for, who may greet."""
 
-    PERMISSIONS = Permissions(Greetings.CAN_GREET)
+    parent: "TstUnit"
+
+    @t.override
+    def _get_permissions(self) -> Permissions:
+        permissions = self.parent.permissions
+        return permissions(permissions.flags.CAN_GREET)
 
     @t.override
     async def _run(self, parameters: str, metadata: OperationMetadata) -> str:
         return f"{parameters}, {metadata.caller.uid}"
 
 
-class TstUnit(Unit):
+class TstUnit(OperationsOwner, Unit):
+    class Flags(PermissionFlags):
+        CAN_GREET = 1 << 0
+
+    permissions = PermissionsSlot(Flags)
+
     op_greet = Factory(GreetOperation)
+
+
+# who may greet, of the domain of the unit, tst
+GREETER: t.Final = Permissions({"tst": TstUnit.Flags.CAN_GREET})
 
 
 class TstCallers(CallersProvider):
@@ -47,8 +59,7 @@ class TstCallers(CallersProvider):
 
     @t.override
     def _get_anonymous_permissions(self) -> Permissions:
-        anyone = Permissions(Greetings.CAN_GREET)
-        return super()._get_anonymous_permissions() | anyone
+        return super()._get_anonymous_permissions() | GREETER
 
 
 class TstOperationsUnit(OperationsUnit):
@@ -72,7 +83,7 @@ class GreetingEcho(AnonymousEcho):
     @t.override
     async def _get_caller(self, context: Context) -> Caller:
         metadata = dict(context.invocation_metadata() or ())
-        greeter = Permissions(Greetings.CAN_GREET)
+        greeter = GREETER
         return Caller(uid=str(metadata["caller"]), permissions=greeter)
 
 
@@ -141,6 +152,6 @@ class OperationsTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_the_caller_is_the_anonymous_one_of_the_project(self) -> None:
         # with what the project gives anyone: greeting
         project = TstProject()
-        servicer = AnonymousEcho(project)
+        servicer = create_entity(AnonymousEcho, project)
         reply = await servicer.Unary(EchoRequest(text="hi"), mock.Mock())
         self.assertEqual(reply.text, "hi, anonymous")

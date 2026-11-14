@@ -23,7 +23,7 @@ from ingot_grpcio.grpc.errors import (
 )
 from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
-from ingots.puer import Slot
+from ingots.puer import Slot, create_entity
 
 from .proto import tst_pb2_grpc
 from .proto.tst_pb2 import EchoReply, EchoRequest
@@ -493,7 +493,8 @@ class RegistryTestCase(unittest.TestCase):
 
         with mock.patch.dict(os.environ, clear=True):
             project = GrpcProject()
-            self.assertRegex(repr(AppPolicy(project)), r"^<\S*AppPolicy app/->$")
+            policy = create_entity(AppPolicy, project)
+            self.assertRegex(repr(policy), r"^<\S*AppPolicy app/->$")
 
     def test_a_policy_in_the_registry_declares_its_exception(self) -> None:
         class AppPolicy(BaseStaticGrpcErrorPolicy):

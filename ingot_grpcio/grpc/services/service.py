@@ -7,6 +7,7 @@ import typing as t
 from types import ModuleType
 
 from google.protobuf.descriptor import FileDescriptor
+from ingots.puer import create_entity
 
 from .servicer import GrpcServicer
 
@@ -15,7 +16,7 @@ if t.TYPE_CHECKING:
 
     from google.protobuf.descriptor import ServiceDescriptor
     from grpc import aio
-    from ingots.puer import Project
+    from ingots.puer import SlotsOwner
 
     from ingot_grpcio.grpc.clients import BaseGrpcClient
     from ingot_grpcio.grpc.servers import BaseGrpcServer
@@ -144,15 +145,16 @@ class GrpcService[Stub, Servicer: GrpcServicer]:
         return self._stub_cls(channel)
 
     @t.final
-    def build_servicer(self, project: "Project") -> Servicer:
+    def build_servicer(self, parent: "SlotsOwner", name: str | None = None) -> Servicer:
         """
-        The servicer of the service, of the project.
+        The servicer of the service under a parent, the unit of its server,
+        at a name, that of the service by default.
 
         :raises LookupError: the service has no implementation.
         """
         if self._servicer_cls is None:
             raise LookupError(f"{self!r} has no servicer: nothing implements it")
-        return self._servicer_cls(project)
+        return create_entity(self._servicer_cls, parent, name or self._name)
 
     @t.final
     def add_to_server(self, servicer: Servicer, server: "aio.Server") -> None:

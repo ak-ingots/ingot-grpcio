@@ -14,7 +14,7 @@ from ingot_grpcio.grpc.clients import DefaultGrpcClient, GrpcClientsUnit
 from ingot_grpcio.grpc.errors import GrpcError, GrpcErrorsUnit
 from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
-from ingots.puer import Slot
+from ingots.puer import Slot, create_entity
 
 from .proto import tst_pb2_grpc
 from .proto.tst_pb2 import EchoReply, EchoRequest
@@ -255,7 +255,7 @@ class ClientTestCase(unittest.IsolatedAsyncioTestCase):
         project, client = await self.start()
         self.assertIsInstance(client.echo, tst_pb2_grpc.EchoStub)
         self.assertIs(client.echo, client.echo)
-        other = TstGrpcClient(project)
+        other = create_entity(TstGrpcClient, project)
         await other
         self.assertIsNot(other.echo, client.echo)
 
