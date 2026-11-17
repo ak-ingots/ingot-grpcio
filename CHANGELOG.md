@@ -5,6 +5,10 @@ to 0.8.0 on TestPyPI are the previous implementation.
 
 <!-- towncrier release notes start -->
 
+## [0.14.0] - 2026-11-17
+### Changed
+- Moved on to ingots 0.35.
+
 ## [0.13.0] - 2026-11-14
 ### Changed
 - Moved on to ingots 0.34. A servicer is an entity under the unit of its
