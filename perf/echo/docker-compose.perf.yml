@@ -1,0 +1,8 @@
+# The cores of the echo under the load, over docker-compose.yml of the
+# example and the floor of the stand: the application and its floor apart,
+# each a core of its own.
+services:
+  app:
+    cpuset: "2-3"
+  raw:
+    cpuset: "4-5"

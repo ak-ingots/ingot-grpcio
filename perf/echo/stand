@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# The stand of the echo: examples/echo in Docker Compose, its services on the
+# cores of docker-compose.perf.yml, by perf/compose-stand of ingots-libs,
+# INGOTS_META, the runner telling it. What perf/run calls: up TREE,
+# down TREE, perf ARGS...
+here=$(cd "$(dirname "$0")" && pwd)
+# the Python of the images of both roles, one, as the numbers compare
+export ECHO_PYTHON=${ECHO_PYTHON:-3.14}
+meta=${INGOTS_META:-$(git -C "$here" rev-parse --show-toplevel)/..}
+exec "$meta/perf/compose-stand" --stand "$here" --example examples/echo \
+    --file docker-compose.raw.yml --file docker-compose.perf.yml "$@"

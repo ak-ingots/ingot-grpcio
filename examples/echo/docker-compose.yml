@@ -1,0 +1,21 @@
+# The echo: the application of ingot-grpcio behind its port.
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: examples/echo/Dockerfile
+      args:
+        PYTHON: ${ECHO_PYTHON:-}
+    environment:
+      APP_IS_STRICT_CONFIGS: "on"
+    ports:
+      - "127.0.0.1:${ECHO_TEST_GRPC_DEFAULT_PORT:-50071}:50051"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import socket; socket.create_connection(("localhost", 50051), 1)
+      interval: 2s
+      timeout: 5s
+      retries: 30
