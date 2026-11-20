@@ -1,0 +1,56 @@
+"""
+What the scenarios of the load of the echo share: the project of the
+client with the configs of a run, ``PerfConfigs`` of ingots joined to its
+own, and the client of the floor of the stand, grpcio alone, on
+``ECHO_RAW_PORT``.
+"""
+
+import typing as t
+
+from ingot_grpcio.settings import GrpcSettingsUnit
+from ingot_grpcio.settings.configs import GrpcConfigs
+from ingots.defaults.settings.configs import IntConfig
+from ingots.perf import PerfConfigs
+from ingots.puer import Slot
+
+from client.project import EchoClientGrpcUnit, EchoClientProject, EchoGrpcClient
+from client.project import EchoGrpcClientsUnit
+
+
+class EchoPerfConfigs(GrpcConfigs, PerfConfigs):
+    # the port of the floor, grpcio alone; the application on GRPC_DEFAULT_*
+    ECHO_RAW_PORT = IntConfig(50072)
+
+
+class EchoPerfSettingsUnit(GrpcSettingsUnit):
+    configs = Slot(EchoPerfConfigs)
+
+
+class RawEchoGrpcClient(EchoGrpcClient):
+    """The client of the floor, on ``ECHO_RAW_PORT``."""
+
+    project: "EchoPerfProject"
+
+    @t.override
+    def _get_target(self) -> str:
+        configs = self.project.settings.configs
+        return f"{configs.GRPC_DEFAULT_HOST}:{configs.ECHO_RAW_PORT}"
+
+
+class EchoPerfGrpcClientsUnit(EchoGrpcClientsUnit):
+    raw = Slot(RawEchoGrpcClient)
+
+
+class EchoPerfGrpcUnit(EchoClientGrpcUnit):
+    clients = Slot(EchoPerfGrpcClientsUnit)
+
+
+class EchoPerfProject(EchoClientProject):
+    """The project of a scenario, which adds its unit ``perf``."""
+
+    settings = Slot(EchoPerfSettingsUnit)
+    grpc = Slot(EchoPerfGrpcUnit)
+
+
+# the text of every echo: its size is not under test
+TEXT: t.Final = "hello"

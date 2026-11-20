@@ -9,7 +9,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .DELETE_ON_ERROR:
 
-SRC := ingot_grpcio tests
+SRC := ingot_grpcio tests examples perf
 
 # Supported interpreters: keep in step with the classifiers and the `wheel`
 # matrix in .github/workflows/ci.yml.
@@ -77,6 +77,9 @@ installed-test:
 proto:  ## Generate the code of the .proto files of the tests
 	uv run python -m grpc_tools.protoc -I . --python_out=. --grpc_python_out=. \
 		--mypy_out=. --mypy_grpc_out=. tests/proto/*.proto
+	uv run python -m grpc_tools.protoc -I $(ECHO) --python_out=$(ECHO) \
+		--grpc_python_out=$(ECHO) --mypy_out=$(ECHO) --mypy_grpc_out=$(ECHO) \
+		$(ECHO)/echo/v1/*.proto
 
 .PHONY: format
 format:  ## Format code with black
@@ -89,6 +92,33 @@ format:  ## Format code with black
 all:  ## Build the sdist and the wheel into dist/
 	rm -rf dist
 	uv build --quiet
+
+ECHO := examples/echo
+# the echo of perf-smoke: the application and the floor of the stand
+ECHO_COMPOSE := STAND_DIR=$(CURDIR)/perf/echo docker compose \
+	-f $(ECHO)/docker-compose.yml -f perf/echo/docker-compose.raw.yml
+export ECHO_PYTHON := $(lastword $(PYTHONS))
+
+# What a stand builds a role by, its tree the candidate's or a worktree of
+# the baseline: the distributions the example installs. The load itself
+# runs from ingots-libs, perf/README.md telling how.
+.PHONY: perf-build
+perf-build: all  ## the distributions of the example, what a stand builds a role by
+	uv export --quiet --no-dev --no-emit-project --no-hashes \
+		--output-file dist/echo-requirements.txt
+
+# The scenarios of the stands, dry, against the echo in Docker: they run,
+# no number measured.
+PERF_PYTHON ?= uv run python
+
+.PHONY: perf-smoke
+perf-smoke: perf-build  ## the scenarios of the stands of perf/, dry, against the echo in Docker
+	@trap '$(ECHO_COMPOSE) down --volumes --timeout 1' EXIT; \
+	$(ECHO_COMPOSE) up --build --detach --wait --quiet-pull; \
+	(cd $(ECHO) && for scenario in ../../perf/echo/scenarios/*.py; do \
+		$(PERF_PYTHON) -m ingots.perf $$scenario \
+			--config IS_PRINT_CONFIGS=off perf smoke; \
+	done)
 
 
 ##@ Changelog

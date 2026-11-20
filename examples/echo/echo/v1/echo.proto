@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package echo.v1;
+
+// The echo of the example: the cost of a call through the servicer of
+// ingot-grpcio, and of a failure through its policy, for the load.
+service EchoService {
+  // The text back.
+  rpc SendEcho (SendEchoRequest) returns (SendEchoResponse) {}
+  // Fails by the policy of the example, FAILED_PRECONDITION, ECHO_FAILED.
+  rpc FailEcho (FailEchoRequest) returns (FailEchoResponse) {}
+}
+
+message SendEchoRequest {
+  string text = 1;
+}
+
+message SendEchoResponse {
+  string text = 1;
+}
+
+message FailEchoRequest {
+  string text = 1;
+}
+
+message FailEchoResponse {
+}
