@@ -1,1 +1,0 @@
-The load of the echo on `ingots.perf`: its example `examples/echo` and its stand `perf/echo`, the echo through the servicer of ingot-grpcio, its failure by a policy and the same on grpcio alone, run by the runner of ingots-libs; `make perf-smoke` runs its scenarios dry.
