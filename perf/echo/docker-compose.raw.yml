@@ -8,6 +8,7 @@ services:
     image: echo-app:perf
     pull_policy: never
     depends_on: [app]
+    entrypoint: [python, -m]
     command: [raw, "50051"]
     volumes:
       - ${STAND_DIR:?the directory of the stand}/raw:/srv/raw:ro

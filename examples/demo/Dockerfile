@@ -10,7 +10,7 @@ COPY dist/ /dist/
 RUN uv pip install --system --no-cache -r /dist/echo-requirements.txt \
     "$(ls /dist/*.whl)"
 WORKDIR /srv
-COPY examples/echo/echo/ echo/
-COPY examples/echo/app/ app/
-ENTRYPOINT ["python", "-m"]
-CMD ["app", "components", "run-forever", "--component", "grpc.servers.default"]
+# the root of the demo is that of the application, its modules on sys.path
+COPY examples/demo/ ./
+ENTRYPOINT ["python", "/srv"]
+CMD ["components", "run-forever", "--component", "grpc.servers.default"]

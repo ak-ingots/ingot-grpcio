@@ -2,7 +2,7 @@
 
 import typing as t
 
-from project import TEXT, EchoPerfProject
+from load import TEXT, EchoPerfProject
 from echo.v1.echo_pb2 import SendEchoRequest
 from ingots.perf import LoadClient, LoadGroup, PerfUnit
 from ingots.puer import Slot

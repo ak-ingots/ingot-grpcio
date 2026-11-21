@@ -93,7 +93,7 @@ all:  ## Build the sdist and the wheel into dist/
 	rm -rf dist
 	uv build --quiet
 
-ECHO := examples/echo
+ECHO := examples/demo
 # the echo of perf-smoke: the application and the floor of the stand
 ECHO_COMPOSE := STAND_DIR=$(CURDIR)/perf/echo docker compose \
 	-f $(ECHO)/docker-compose.yml -f perf/echo/docker-compose.raw.yml
