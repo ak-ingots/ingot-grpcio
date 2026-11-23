@@ -11,10 +11,10 @@ from ingots.perf import LoadClient, LoadGroup, PerfUnit
 from ingots.puer import Slot
 
 
-class RawFailer(LoadClient["PerfProject", "RawFailerGroup"]):
+class BareFailer(LoadClient["PerfProject", "BareFailerGroup"]):
     @t.override
     async def asyncSetUp(self) -> None:
-        self.echo = (await self.project.grpc.clients.raw).echo
+        self.echo = (await self.project.grpc.clients.bare).echo
 
     @t.override
     async def run(self) -> None:
@@ -26,13 +26,13 @@ class RawFailer(LoadClient["PerfProject", "RawFailerGroup"]):
                     raise
 
 
-class RawFailerGroup(LoadGroup[None]):
-    clients = (RawFailer,)
+class BareFailerGroup(LoadGroup[None]):
+    clients = (BareFailer,)
 
 
-class RawFailEchoPerf(PerfUnit[None]):
-    group = RawFailerGroup
+class BareFailEchoPerf(PerfUnit[None]):
+    group = BareFailerGroup
 
 
 class PerfProject(EchoPerfProject):
-    perf = Slot(RawFailEchoPerf)
+    perf = Slot(BareFailEchoPerf)

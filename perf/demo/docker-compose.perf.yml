@@ -4,5 +4,5 @@
 services:
   app:
     cpuset: "2-3"
-  raw:
+  bare:
     cpuset: "4-5"

@@ -8,10 +8,10 @@ from ingots.perf import LoadClient, LoadGroup, PerfUnit
 from ingots.puer import Slot
 
 
-class RawSender(LoadClient["PerfProject", "RawSenderGroup"]):
+class BareSender(LoadClient["PerfProject", "BareSenderGroup"]):
     @t.override
     async def asyncSetUp(self) -> None:
-        self.echo = (await self.project.grpc.clients.raw).echo
+        self.echo = (await self.project.grpc.clients.bare).echo
 
     @t.override
     async def run(self) -> None:
@@ -19,13 +19,13 @@ class RawSender(LoadClient["PerfProject", "RawSenderGroup"]):
             await self.echo.SendEcho(SendEchoRequest(text=TEXT))
 
 
-class RawSenderGroup(LoadGroup[None]):
-    clients = (RawSender,)
+class BareSenderGroup(LoadGroup[None]):
+    clients = (BareSender,)
 
 
-class RawSendEchoPerf(PerfUnit[None]):
-    group = RawSenderGroup
+class BareSendEchoPerf(PerfUnit[None]):
+    group = BareSenderGroup
 
 
 class PerfProject(EchoPerfProject):
-    perf = Slot(RawSendEchoPerf)
+    perf = Slot(BareSendEchoPerf)
