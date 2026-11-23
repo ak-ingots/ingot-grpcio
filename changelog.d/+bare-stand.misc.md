@@ -1,0 +1,1 @@
+The stand of the load is `perf/demo`, as the demo is; its floor a server of its own, `bare/`, on grpcio alone at the versions of the demo, its scenarios `bare-*`; the project of the load configured by `PERF_TEST_`.

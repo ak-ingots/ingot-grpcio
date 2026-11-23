@@ -1,0 +1,24 @@
+# The floor of the echo, over docker-compose.yml of the example: the same
+# service on grpcio alone, an image of its own at the versions of the echo
+# of the role, the code of the floor the stand's, STAND_DIR.
+services:
+  bare:
+    build:
+      context: ../..
+      dockerfile: ${STAND_DIR:?the directory of the stand}/bare/Dockerfile
+      additional_contexts:
+        stand: ${STAND_DIR}
+      args:
+        PYTHON: ${ECHO_PYTHON:-}
+    depends_on: [app]
+    ports:
+      - "127.0.0.1:${PERF_TEST_ECHO_BARE_PORT:-50072}:50051"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import socket; socket.create_connection(("localhost", 50051), 1)
+      interval: 2s
+      timeout: 5s
+      retries: 30

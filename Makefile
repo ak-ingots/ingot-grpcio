@@ -71,6 +71,9 @@ installed-test:
 		rm -rf "$$tmp"; \
 	done
 
+
+##@ Code
+
 # The code of the .proto files of the tests: grpcio's _pb2.py and _pb2_grpc.py,
 # with the stubs of mypy-protobuf, committed next to them.
 .PHONY: proto
@@ -93,17 +96,20 @@ all:  ## Build the sdist and the wheel into dist/
 	rm -rf dist
 	uv build --quiet
 
+
+##@ Load
+
 ECHO := examples/demo
 # the echo of perf-smoke: the application and the floor of the stand
-ECHO_COMPOSE := STAND_DIR=$(CURDIR)/perf/echo docker compose \
-	-f $(ECHO)/docker-compose.yml -f perf/echo/docker-compose.raw.yml
+ECHO_COMPOSE := STAND_DIR=$(CURDIR)/perf/demo docker compose \
+	-f $(ECHO)/docker-compose.yml -f perf/demo/docker-compose.bare.yml
 export ECHO_PYTHON := $(lastword $(PYTHONS))
 
 # What a stand builds a role by, its tree the candidate's or a worktree of
 # the baseline: the distributions the example installs. The load itself
 # runs from ingots-libs, perf/README.md telling how.
 .PHONY: perf-build
-perf-build: all  ## the distributions of the example, what a stand builds a role by
+perf-build: all  ## The distributions of the example, what a stand builds a role by
 	uv export --quiet --no-dev --no-emit-project --no-hashes \
 		--output-file dist/echo-requirements.txt
 
@@ -112,10 +118,10 @@ perf-build: all  ## the distributions of the example, what a stand builds a role
 PERF_PYTHON ?= uv run python
 
 .PHONY: perf-smoke
-perf-smoke: perf-build  ## the scenarios of the stands of perf/, dry, against the echo in Docker
+perf-smoke: perf-build  ## The scenarios of the stands of perf/, dry, against the echo in Docker
 	@trap '$(ECHO_COMPOSE) down --volumes --timeout 1' EXIT; \
 	$(ECHO_COMPOSE) up --build --detach --wait --quiet-pull; \
-	(cd $(ECHO) && for scenario in ../../perf/echo/scenarios/*.py; do \
+	(cd $(ECHO) && for scenario in ../../perf/demo/scenarios/*.py; do \
 		$(PERF_PYTHON) -m ingots.perf $$scenario \
 			--config IS_PRINT_CONFIGS=off perf smoke; \
 	done)

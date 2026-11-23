@@ -8,4 +8,4 @@ here=$(cd "$(dirname "$0")" && pwd)
 export ECHO_PYTHON=${ECHO_PYTHON:-3.14}
 meta=${INGOTS_META:-$(git -C "$here" rev-parse --show-toplevel)/..}
 exec "$meta/perf/compose-stand" --stand "$here" --example examples/demo \
-    --file docker-compose.raw.yml --file docker-compose.perf.yml "$@"
+    --file docker-compose.bare.yml --file docker-compose.perf.yml "$@"

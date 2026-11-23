@@ -1,4 +1,4 @@
-"""``python -m raw [PORT]``: the echo on grpcio alone, until stopped."""
+"""``python -m bare [PORT]``: the echo on grpcio alone, until stopped."""
 
 import asyncio
 import sys
@@ -16,7 +16,7 @@ from echo.v1.echo_pb2 import (
 )
 
 
-class RawEchoServicer(echo_pb2_grpc.EchoServiceServicer):
+class BareEchoServicer(echo_pb2_grpc.EchoServiceServicer):
     @t.override
     async def SendEcho(
         self,
@@ -39,7 +39,7 @@ class RawEchoServicer(echo_pb2_grpc.EchoServiceServicer):
 
 async def serve(port: int) -> None:
     server = aio.server()
-    echo_pb2_grpc.add_EchoServiceServicer_to_server(RawEchoServicer(), server)
+    echo_pb2_grpc.add_EchoServiceServicer_to_server(BareEchoServicer(), server)
     server.add_insecure_port(f"[::]:{port}")
     await server.start()
     await server.wait_for_termination()

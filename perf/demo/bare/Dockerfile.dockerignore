@@ -1,0 +1,4 @@
+*
+!dist/echo-requirements.txt
+!examples/demo/echo/
+**/__pycache__
