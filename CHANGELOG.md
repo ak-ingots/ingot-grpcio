@@ -5,6 +5,14 @@ to 0.8.0 on TestPyPI are the previous implementation.
 
 <!-- towncrier release notes start -->
 
+## [0.16.0] - 2026-11-24
+### Changed
+- Moved on to ingots 0.37.
+- `examples/echo` is `examples/demo`, laid out as an application is: at its
+  root `project.py`, collecting `extensions/`, a module each for what it
+  extends, the settings, the logging, the operations and gRPC, beside the
+  domain `echo/` and its contract, run as `python .` from it.
+
 ## [0.15.0] - 2026-11-20
 ### Changed
 - Moved on to ingots 0.36.
