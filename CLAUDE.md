@@ -111,6 +111,11 @@ One test: `uv run python -m unittest tests.test_canary.CanaryTestCase`.
   outside (a bug of a library, a standard, a measure), a trap for the next
   change. None repeats the code, a name, a docstring or what a key of a
   config says, nor tells the history of a change: that is the commit's.
+  Reading it, one thinks "ah, so that's it"; a comment that gives no such
+  moment states the obvious and goes.
+- A TODO names its issue of GitHub, `# TODO(#42): ...`, of another
+  repository `# TODO(ak-ingots/ingots#42): ...`: one without an issue is
+  never done. No issue, no TODO: do it now, or open the issue first.
 - Code layout and naming follow ADR 0007; the PUER rules of `ingots` apply to
   an addon too: hooks start with an underscore and are overridden, not
   called; a protected member is touched only by its class, its subclasses

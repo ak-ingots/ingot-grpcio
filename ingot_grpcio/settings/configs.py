@@ -23,7 +23,6 @@ class GrpcConfigs(Configs):
 
     GRPC_LOGGING_LEVEL = LogLevelConfig(logging.INFO)
 
-    # the default server
     GRPC_DEFAULT_LISTEN_HOST = StrConfig("[::]")
     GRPC_DEFAULT_PORT = IntConfig(50051)
     GRPC_DEFAULT_MAX_CONCURRENT_RPCS = IntConfig(100)  # 0: no limit
