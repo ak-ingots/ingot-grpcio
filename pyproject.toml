@@ -10,6 +10,7 @@ authors = [{name = "Aliaksandr Karotki", email = "abkarotki@gmail.com"}]
 keywords = ["ingots", "grpc", "grpcio"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
+    "Framework :: AsyncIO",
     "Intended Audience :: Developers",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
@@ -17,6 +18,8 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Networking",
     "Typing :: Typed",
 ]
 dependencies = [
@@ -29,7 +32,9 @@ dependencies = [
 
 [project.urls]
 repository = "https://github.com/ak-ingots/ingot-grpcio"
+issues = "https://github.com/ak-ingots/ingot-grpcio/issues"
 changelog = "https://github.com/ak-ingots/ingot-grpcio/blob/main/CHANGELOG.md"
+ecosystem = "https://github.com/ak-ingots/ingots-libs"
 
 [project.optional-dependencies]
 reflection = ["grpcio-reflection>=1.84,<2"]

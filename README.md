@@ -1,5 +1,7 @@
 # ingot-grpcio
 
+[![PyPI](https://img.shields.io/pypi/v/ingot-grpcio.svg)](https://pypi.org/project/ingot-grpcio/)
+[![Python](https://img.shields.io/pypi/pyversions/ingot-grpcio.svg)](https://pypi.org/project/ingot-grpcio/)
 [![ci](https://github.com/ak-ingots/ingot-grpcio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ak-ingots/ingot-grpcio/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/ak-ingots/ingot-grpcio/blob/main/LICENSE)
 
