@@ -43,6 +43,7 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "ingot_grpcio"
 module-root = ""
+wheel-exclude = ["**/CLAUDE.md"]
 
 [tool.uv]
 # uv 0.13.5 drops the eMudhra roots from its certificates and its Pythons.
