@@ -7,7 +7,16 @@ requires-python = ">=3.14"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [{name = "Aliaksandr Karotki", email = "abkarotki@gmail.com"}]
-keywords = ["ingots", "grpc", "grpcio"]
+keywords = [
+    "ingots",
+    "grpc",
+    "grpcio",
+    "rpc",
+    "protobuf",
+    "server",
+    "client",
+    "microservices",
+]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Framework :: AsyncIO",
