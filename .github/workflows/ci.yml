@@ -6,6 +6,10 @@ on:
   push:
     branches: [main]
   merge_group:
+  # weekly, so that the badge tells main builds in the world of today, not
+  # only on the day of its last push
+  schedule:
+    - cron: "0 6 * * 1"
 
 permissions:
   contents: read
