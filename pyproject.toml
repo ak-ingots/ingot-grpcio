@@ -19,7 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3.15",
     "Typing :: Typed",
 ]
-# Before 1.0 a minor version of ingots may break its addons.
 dependencies = [
     "googleapis-common-protos>=1.70,<2",
     "grpcio>=1.84,<2",
@@ -32,7 +31,6 @@ dependencies = [
 repository = "https://github.com/ak-ingots/ingot-grpcio"
 changelog = "https://github.com/ak-ingots/ingot-grpcio/blob/main/CHANGELOG.md"
 
-# One extra per integration: an application installs only what it uses.
 [project.optional-dependencies]
 reflection = ["grpcio-reflection>=1.84,<2"]
 
@@ -46,7 +44,6 @@ module-root = ""
 wheel-exclude = ["**/CLAUDE.md"]
 
 [tool.uv]
-# uv 0.13.5 drops the eMudhra roots from its certificates and its Pythons.
 required-version = ">=0.13.5"
 environments = ["sys_platform == 'linux'", "sys_platform == 'darwin'"]
 
@@ -69,15 +66,12 @@ changelog = ["towncrier"]
 
 [tool.black]
 line-length = 88
-# the code protoc generates from the .proto files of the tests
 extend-exclude = "_pb2(_grpc)?\\.pyi?$"
 
 [tool.flake8]
 exclude = [".git", ".venv", "*_pb2.py", "*_pb2_grpc.py", "*_pb2.pyi", "*_pb2_grpc.pyi"]
 max-line-length = 88
 extend-ignore = ["E203", "E701", "E704"]
-# Member order of ADR 0007 (ingots-libs). `__init_subclass__` is written with an
-# explicit @classmethod, so it is checked as a class method.
 class_attributes_order = [
     "nested_class",
     "constant",
@@ -107,7 +101,7 @@ module = ["tests.proto.*", "echo.v1.*"]
 disable_error_code = ["explicit-override"]
 
 [[tool.mypy.overrides]]
-# grpcio-reflection ships neither stubs nor py.typed
+# grpcio-reflection ships the stubs of its code, without py.typed
 module = ["grpc_reflection.*"]
 ignore_missing_imports = true
 
@@ -158,8 +152,6 @@ directory = "security"
 name = "Security"
 showcontent = true
 
-# Internal changes users need not know about (agent rules, CI, test
-# refactoring): the fragment satisfies `cl-check`, its text is not published.
 [[tool.towncrier.type]]
 directory = "misc"
 name = "Misc"

@@ -1,22 +1,5 @@
 name: release
 
-# Publishes the package through trusted publishing: no token is stored, PyPI
-# and TestPyPI trust this workflow in their GitHub environment.
-#
-# - A tag vX.Y.Z on main publishes the version of pyproject.toml, which must
-#   be X.Y.Z, to TestPyPI, then to PyPI.
-# - Run by hand (workflow_dispatch), it is a rehearsal: main as
-#   X.Y.Z.devN, N the run number, to TestPyPI only.
-#
-# What is published is the build that `make wheel-test` tested; PyPI takes
-# it once the workflow `index-test` of the meta repository has installed and
-# tested it as TestPyPI gives it.
-#
-# What depends on the package is checked too, by the reusable workflow of the
-# meta repository (ADR 0008): neither call holds a release back. A red
-# `dep-try` tells what the build breaks, before PyPI; a red `dep-behind` after
-# a release tells what is to be moved and released.
-
 on:
   push:
     tags: ["v*"]
@@ -72,7 +55,7 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/p/ingot-grpcio
     permissions:
-      id-token: write  # trusted publishing
+      id-token: write
     steps:
       - uses: actions/download-artifact@v8
         with:
@@ -98,7 +81,7 @@ jobs:
       name: pypi
       url: https://pypi.org/p/ingot-grpcio
     permissions:
-      id-token: write  # trusted publishing
+      id-token: write
     steps:
       - uses: actions/download-artifact@v8
         with:

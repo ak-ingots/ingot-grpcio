@@ -126,7 +126,7 @@ class BaseGrpcServer(GrpcServicesOwner, Component):
             addresses.append(f"{host}:{bound}")
         self._addresses = tuple(addresses)
         if self._get_is_reflection():
-            from .reflection import enable_reflection  # the extra reflection
+            from .reflection import enable_reflection
 
             enable_reflection(server, services)
             logger.info("%r: reflection on", self)

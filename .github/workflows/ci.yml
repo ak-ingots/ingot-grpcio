@@ -1,9 +1,5 @@
 name: ci
 
-# `make check`, split across jobs so the legs run in parallel. Every check is
-# a `make` target invoked exactly as it is locally: there is no check that CI
-# enforces and `make check` does not, and none the other way round.
-
 on:
   pull_request:
     branches: [main]
@@ -32,7 +28,6 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.2  # no floating major tags since v8
       - run: make ${{ matrix.target }}
 
-  # The built wheel, once per supported interpreter (PYTHONS in the Makefile).
   wheel:
     runs-on: ubuntu-latest
     strategy:
