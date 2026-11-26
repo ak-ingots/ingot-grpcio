@@ -16,7 +16,7 @@ from ingot_grpcio.grpc.clients import DefaultGrpcClient
 from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService, GrpcServicer
 from ingots.puer import Slot
-from ingots.puer.cli import CommandRunner
+from ingots.defaults.cli import CommandRunner
 
 from .proto import tst_pb2_grpc
 from .proto.tst_pb2 import EchoReply, EchoRequest

@@ -24,7 +24,8 @@ A library (ADR 0003), Python >= 3.14, part of the
     the anonymous one of `operations.callers` here; a binding, a plain class
     of them, and a `GrpcServicesOwner` extending it giving each its servicer
     or stub; `export.py`, the services of servers as a `FileDescriptorSet`,
-    by `grpc export` (`commands.py`).
+    by `grpc export` (`commands.py`, its `GrpcCommandsUnit` under
+    `GrpcCliUnit`, the unit `cli` of `GrpcProject`).
   - `servers/`: `BaseGrpcServer`, a component with hooks for its configs;
     `DefaultGrpcServer` on `GRPC_DEFAULT_*`; the reflection, on by
     `GRPC_DEFAULT_IS_REFLECTION` with the extra `reflection`, in

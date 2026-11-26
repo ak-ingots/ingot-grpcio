@@ -7,10 +7,11 @@ own, and the client of the floor of the stand, grpcio alone, on
 
 import typing as t
 
+from ingot_grpcio.grpc import GrpcCliUnit
 from ingot_grpcio.settings import GrpcSettingsUnit
 from ingot_grpcio.settings.configs import GrpcConfigs
 from ingots.defaults.settings.configs import IntConfig
-from ingots.perf import PerfConfigs
+from ingots.perf import PerfCliUnit, PerfConfigs, PerfStandProject
 from ingots.puer import Slot
 
 from client.project import EchoClientGrpcUnit, EchoClientProject, EchoGrpcClient
@@ -45,12 +46,17 @@ class EchoPerfGrpcUnit(EchoClientGrpcUnit):
     clients = Slot(EchoPerfGrpcClientsUnit)
 
 
-class EchoPerfProject(EchoClientProject):
+class EchoPerfCliUnit(PerfCliUnit, GrpcCliUnit):
+    pass
+
+
+class EchoPerfProject(PerfStandProject, EchoClientProject):
     """The project of a scenario, which adds its unit ``perf``."""
 
     env_configs_prefix = "PERF_TEST"
     settings = Slot(EchoPerfSettingsUnit)
     grpc = Slot(EchoPerfGrpcUnit)
+    cli = Slot(EchoPerfCliUnit)
 
 
 # the text of every echo: its size is not under test

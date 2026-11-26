@@ -1,17 +1,16 @@
 """The gRPC unit: the errors, the servers and the clients of the project."""
 
-__all__ = ("GrpcUnit",)
+__all__ = ("GrpcCliUnit", "GrpcCommandsUnit", "GrpcUnit")
 
-from ingots.puer import Slot
-from ingots.puer.cli import CliUnit
+from ingots.puer import Slot, Unit
 
 from .clients import GrpcClientsUnit
-from .commands import ExportGrpcCommand
+from .commands import GrpcCliUnit, GrpcCommandsUnit
 from .errors import GrpcErrorsUnit
 from .servers import GrpcServersUnit
 
 
-class GrpcUnit(CliUnit):
+class GrpcUnit(Unit):
     """
     gRPC in the project: :attr:`errors`, the policies of the exceptions of
     the business logic; :attr:`servers` and :attr:`clients`, the servers
@@ -23,13 +22,10 @@ class GrpcUnit(CliUnit):
         class AppGrpcServersUnit(GrpcServersUnit):
             default = Slot(AppGrpcServer)
 
-    On the command line, ``grpc export`` writes the services of the
-    servers for client SDKs.
+    On the command line, ``grpc export`` of :class:`GrpcCliUnit` writes
+    the services of the servers for client SDKs.
     """
-
-    cli_description = "gRPC: the export of the services."
 
     errors = Slot(GrpcErrorsUnit)
     servers = Slot(GrpcServersUnit)
     clients = Slot(GrpcClientsUnit)
-    export = Slot(ExportGrpcCommand)
