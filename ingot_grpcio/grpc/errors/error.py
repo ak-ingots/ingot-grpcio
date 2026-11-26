@@ -20,6 +20,8 @@ class GrpcError(Exception):
     caller that needs it.
     """
 
+    args: "tuple[str, status_pb2.Status]"
+
     @classmethod
     def from_status(cls, status: "status_pb2.Status") -> t.Self:
         """The error of a status."""
@@ -28,7 +30,7 @@ class GrpcError(Exception):
     @property
     def status(self) -> "status_pb2.Status":
         """The status of the call, as the server sent it."""
-        return t.cast("status_pb2.Status", self.args[1])
+        return self.args[1]
 
     @property
     def code(self) -> grpc.StatusCode:
@@ -63,7 +65,7 @@ class GrpcError(Exception):
 
     @t.override
     def __str__(self) -> str:
-        return t.cast(str, self.args[0])
+        return self.args[0]
 
     def find_detail[MessageType: "Message"](
         self, kind: type[MessageType]

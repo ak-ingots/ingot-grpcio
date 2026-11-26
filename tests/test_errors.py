@@ -34,23 +34,27 @@ Context: t.TypeAlias = aio.ServicerContext[EchoRequest, EchoReply]
 class ShopError(Exception):
     """A business error, by the pattern of ingots: args, then creators."""
 
+    args: tuple[str, ...]
+
     @classmethod
     def build(cls, message: str) -> t.Self:
         return cls(message)
 
     @t.override
     def __str__(self) -> str:
-        return t.cast(str, self.args[0])
+        return self.args[0]
 
 
 class InsufficientFunds(ShopError):
+    args: tuple[str, str]
+
     @classmethod
     def for_account(cls, account: str) -> t.Self:
         return cls(f"insufficient funds on {account}", account)
 
     @property
     def account(self) -> str:
-        return t.cast(str, self.args[1])
+        return self.args[1]
 
 
 class OutOfStock(ShopError):
