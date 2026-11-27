@@ -5,6 +5,13 @@ to 0.8.0 on TestPyPI are the previous implementation.
 
 <!-- towncrier release notes start -->
 
+## [0.18.0] - 2026-11-27
+### Changed
+- The commands in `ingot_grpcio.cli`, the domain of the commands, its modules
+  as the tree goes: `GrpcCliUnit` imported from `ingot_grpcio.cli`,
+  `GrpcCommandsUnit` and `grpc export` from `ingot_grpcio.cli.grpc`; the
+  module `ingot_grpcio.grpc.commands` is gone.
+
 ## [0.17.0] - 2026-11-27
 ### Changed
 - On ingots 0.38: the command line a domain of the defaults. `grpc export` is
