@@ -1,6 +1,6 @@
-"""The commands of gRPC: ``grpc export``, on the command line of the defaults."""
+"""The commands of gRPC, ``grpc``: ``grpc export``."""
 
-__all__ = ("ExportGrpcCliArgs", "ExportGrpcCommand", "GrpcCliUnit", "GrpcCommandsUnit")
+__all__ = ("ExportGrpcCliArgs", "ExportGrpcCommand", "GrpcCommandsUnit")
 
 import argparse
 import logging
@@ -8,11 +8,11 @@ import pathlib
 import typing as t
 from dataclasses import dataclass
 
-from ingots.defaults.cli import BaseCommand, CliUnit, CommandsUnit
+from ingots.defaults.cli import BaseCommand, CommandsUnit
 from ingots.puer import Slot
 
-from .servers import BaseGrpcServer
-from .services import build_descriptor_set
+from ingot_grpcio.grpc.servers import BaseGrpcServer
+from ingot_grpcio.grpc.services import build_descriptor_set
 
 if t.TYPE_CHECKING:
     from ingot_grpcio.project import GrpcProject
@@ -100,12 +100,3 @@ class GrpcCommandsUnit(CommandsUnit):
 
     cli_description = "gRPC: the export of the services."
     export = Slot(ExportGrpcCommand)
-
-
-class GrpcCliUnit(CliUnit):
-    """
-    The command line of the defaults and ``grpc``; an application of other
-    addons with commands joins it with theirs.
-    """
-
-    grpc = Slot(GrpcCommandsUnit)

@@ -7,7 +7,7 @@ own, and the client of the floor of the stand, grpcio alone, on
 
 import typing as t
 
-from ingot_grpcio.grpc import GrpcCliUnit
+from ingot_grpcio.cli import GrpcCliUnit
 from ingot_grpcio.settings import GrpcSettingsUnit
 from ingot_grpcio.settings.configs import GrpcConfigs
 from ingots.defaults.settings.configs import IntConfig

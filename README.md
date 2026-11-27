@@ -37,7 +37,7 @@ with its command `say`, both below:
 import typing as t
 
 from ingot_grpcio import GrpcProject
-from ingot_grpcio.grpc import GrpcCliUnit
+from ingot_grpcio.cli import GrpcCliUnit
 from ingot_grpcio.logging import GrpcLoggingUnit
 from ingot_grpcio.settings import GrpcSettingsUnit
 from ingot_grpcio.settings.configs import GrpcConfigs

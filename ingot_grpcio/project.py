@@ -5,7 +5,8 @@ __all__ = ("GrpcProject",)
 from ingots.defaults import Project
 from ingots.puer import Slot
 
-from .grpc import GrpcCliUnit, GrpcUnit
+from .cli import GrpcCliUnit
+from .grpc import GrpcUnit
 from .logging import GrpcLoggingUnit
 from .settings import GrpcSettingsUnit
 
