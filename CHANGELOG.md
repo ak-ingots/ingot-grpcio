@@ -5,6 +5,14 @@ to 0.8.0 on TestPyPI are the previous implementation.
 
 <!-- towncrier release notes start -->
 
+## [0.17.0] - 2026-11-27
+### Changed
+- On ingots 0.38: the command line a domain of the defaults. `grpc export` is
+  a command of `GrpcCommandsUnit`, under `GrpcCliUnit`, the unit `cli` of
+  `GrpcProject`; `GrpcUnit` is a plain unit. An application with commands of
+  its own extends `GrpcCliUnit`, and joins it with the units `cli` of its
+  other addons.
+
 ## [0.16.0] - 2026-11-24
 ### Changed
 - Moved on to ingots 0.37.
