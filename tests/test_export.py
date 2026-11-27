@@ -18,7 +18,7 @@ from ingot_grpcio.grpc.servers import DefaultGrpcServer, GrpcServersUnit
 from ingot_grpcio.grpc.services import GrpcService, build_descriptor_set
 from ingot_grpcio.grpc.services.export import iter_with_imports
 from ingots.puer import Slot
-from ingots.puer.cli import CommandRunner
+from ingots.defaults.cli import CommandRunner
 
 from .proto import tst_pb2_grpc
 from .test_server import Echo, Ping

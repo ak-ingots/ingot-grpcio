@@ -11,7 +11,7 @@ from ingot_grpcio.logging import GrpcLoggingUnit
 from ingot_grpcio.settings import GrpcSettingsUnit
 from ingot_grpcio.settings.configs import GrpcConfigs
 from ingots.defaults import Project
-from ingots.puer.cli import CommandRunner
+from ingots.defaults.cli import CommandRunner
 
 
 class ProjectTestCase(unittest.TestCase):

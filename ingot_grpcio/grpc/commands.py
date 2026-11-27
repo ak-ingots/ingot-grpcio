@@ -1,6 +1,6 @@
-"""The commands of gRPC."""
+"""The commands of gRPC: ``grpc export``, on the command line of the defaults."""
 
-__all__ = ("ExportGrpcCliArgs", "ExportGrpcCommand")
+__all__ = ("ExportGrpcCliArgs", "ExportGrpcCommand", "GrpcCliUnit", "GrpcCommandsUnit")
 
 import argparse
 import logging
@@ -8,7 +8,8 @@ import pathlib
 import typing as t
 from dataclasses import dataclass
 
-from ingots.puer.cli import BaseCommand
+from ingots.defaults.cli import BaseCommand, CliUnit, CommandsUnit
+from ingots.puer import Slot
 
 from .servers import BaseGrpcServer
 from .services import build_descriptor_set
@@ -92,3 +93,19 @@ class ExportGrpcCommand(BaseCommand):
             ", ".join(names),
             output,
         )
+
+
+class GrpcCommandsUnit(CommandsUnit):
+    """``grpc``: the commands of gRPC."""
+
+    cli_description = "gRPC: the export of the services."
+    export = Slot(ExportGrpcCommand)
+
+
+class GrpcCliUnit(CliUnit):
+    """
+    The command line of the defaults and ``grpc``; an application of other
+    addons with commands joins it with theirs.
+    """
+
+    grpc = Slot(GrpcCommandsUnit)

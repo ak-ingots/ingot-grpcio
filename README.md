@@ -29,13 +29,15 @@ The extra `reflection` lets a server describe its services
 
 An application of Ingots has its own configs, settings, logging and project;
 each takes the class of the addon among its bases. The project takes the
-gRPC of the application, `AppGrpcUnit`, and its command `say`, both below:
+gRPC of the application, `AppGrpcUnit`, and its command line, `AppCliUnit`,
+with its command `say`, both below:
 
 ```python
 # app/project.py
 import typing as t
 
 from ingot_grpcio import GrpcProject
+from ingot_grpcio.grpc import GrpcCliUnit
 from ingot_grpcio.logging import GrpcLoggingUnit
 from ingot_grpcio.settings import GrpcSettingsUnit
 from ingot_grpcio.settings.configs import GrpcConfigs
@@ -57,16 +59,21 @@ class AppLoggingUnit(GrpcLoggingUnit):
     project: "AppProject"
 
 
+class AppCliUnit(GrpcCliUnit):
+    say = Slot(Say)
+
+
 class AppProject(GrpcProject):
     env_configs_prefix = "APP"
     settings = Slot(AppSettingsUnit)
     logging = Slot(AppLoggingUnit)
     grpc = Slot(AppGrpcUnit)
-    say = Slot(Say)
+    cli = Slot(AppCliUnit)
 ```
 
 With other addons, their classes join the same bases:
-`class AppConfigs(HttpConfigs, GrpcConfigs)`, and so on, as the
+`class AppConfigs(HttpConfigs, GrpcConfigs)`, `class AppCliUnit(HttpCliUnit,
+GrpcCliUnit)`, and so on, as the
 [addon guide](https://github.com/ak-ingots/ingots/blob/main/docs/defaults/addon.md)
 of Ingots shows.
 
@@ -77,7 +84,7 @@ The application runs through its own `__main__.py`:
 import sys
 
 from ingots.defaults.logging import configure_startup_logging
-from ingots.puer.cli import CommandRunner
+from ingots.defaults.cli import CommandRunner
 
 from .project import AppProject
 
@@ -246,7 +253,7 @@ server. The command `say`:
 # app/say.py
 import typing as t
 
-from ingots.puer.cli import BaseCommand
+from ingots.defaults.cli import BaseCommand
 
 from .proto import demo_pb2
 
